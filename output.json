@@ -1,0 +1,88 @@
+{
+    "globalAudio": [],
+    "layoutCreatedAt": "2024-01-01T00:00:00Z",
+    "layoutId": "beach_day_001",
+    "outputFormat": "mp4",
+    "outputFrameRate": 30,
+    "outputResolution": {
+        "height": 1080,
+        "width": 1920
+    },
+    "segments": [
+        {
+            "audioTracks": [],
+            "segmentEnd": 3,
+            "segmentId": "title_card_001",
+            "segmentStart": 0,
+            "segmentType": {
+                "duration": 3,
+                "text": "Our Perfect Beach Day",
+                "type": "TitleCard"
+            },
+            "textOverlays": [],
+            "transition": null
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 33,
+            "segmentId": "video_segment_001",
+            "segmentStart": 3,
+            "segmentType": {
+                "mediaReference": {
+                    "endTime": 30,
+                    "mediaId": "vacation_beach.mp4",
+                    "playbackSpeed": null,
+                    "startTime": 0
+                },
+                "type": "VideoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "duration": 2,
+                "type": "Dissolve"
+            }
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 65,
+            "segmentId": "video_segment_002",
+            "segmentStart": 35,
+            "segmentType": {
+                "mediaReference": {
+                    "endTime": 60,
+                    "mediaId": "vacation_beach.mp4",
+                    "playbackSpeed": null,
+                    "startTime": 30
+                },
+                "type": "VideoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "duration": 2,
+                "type": "Dissolve"
+            }
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 75,
+            "segmentId": "photo_segment_001",
+            "segmentStart": 65,
+            "segmentType": {
+                "duration": 10,
+                "mediaReference": {
+                    "endTime": 0,
+                    "mediaId": "sunset_photo.jpg",
+                    "playbackSpeed": null,
+                    "startTime": 0
+                },
+                "type": "PhotoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "duration": 2,
+                "type": "Dissolve"
+            }
+        }
+    ],
+    "totalDuration": 60
+}

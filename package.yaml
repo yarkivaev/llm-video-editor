@@ -24,12 +24,18 @@ dependencies:
 - text
 - time
 - aeson
+- aeson-pretty
 - bytestring
 - http-client
 - http-client-tls
 - servant-client
 - transformers
 - mtl
+- http-types
+- case-insensitive
+- vector
+- optparse-applicative
+- filepath
 
 ghc-options:
 - -Wall
@@ -68,3 +74,11 @@ tests:
     - llm-video-editor
     - hspec
     - QuickCheck
+    - process
+    - directory
+    - temporary
+    - aeson
+    - aeson-pretty
+    - bytestring
+    - text
+    - filepath

@@ -1,0 +1,84 @@
+{
+  "requestId": "test-request-001",
+  "mediaFiles": [
+    {
+      "type": "video",
+      "metadata": {
+        "fileName": "vacation_beach.mp4",
+        "filePath": "/media/videos/vacation_beach.mp4",
+        "fileSize": 104857600,
+        "createdAt": "2024-01-15 14:30:00 UTC",
+        "description": "Beach vacation footage with family",
+        "tags": ["vacation", "beach", "family"]
+      },
+      "duration": 120.5,
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "frameRate": 30.0,
+      "hasAudio": true,
+      "videoFormat": "mp4",
+      "contentAnalysis": {
+        "contentOverview": "Family enjoying a sunny day at the beach",
+        "actionIntroduction": "Video shows family members playing in the sand and waves",
+        "timeBoundDetails": [
+          {
+            "detailStartTime": 0.0,
+            "detailEndTime": 30.0,
+            "detailDescription": "Family setting up beach umbrella and chairs",
+            "detailConfidence": 0.9
+          },
+          {
+            "detailStartTime": 30.0,
+            "detailEndTime": 90.0,
+            "detailDescription": "Children playing in the waves and building sandcastles",
+            "detailConfidence": 0.85
+          },
+          {
+            "detailStartTime": 90.0,
+            "detailEndTime": 120.5,
+            "detailDescription": "Family packing up and preparing to leave",
+            "detailConfidence": 0.8
+          }
+        ],
+        "detectedObjects": ["umbrella", "chairs", "children", "waves", "sand"],
+        "detectedScenes": ["outdoor", "beach", "sunny"],
+        "estimatedMood": "happy and relaxed"
+      }
+    },
+    {
+      "type": "photo",
+      "metadata": {
+        "fileName": "sunset_photo.jpg",
+        "filePath": "/media/photos/sunset_photo.jpg",
+        "fileSize": 2097152,
+        "createdAt": "2024-01-15 18:45:00 UTC",
+        "description": "Beautiful sunset over the ocean",
+        "tags": ["sunset", "ocean", "scenic"]
+      },
+      "resolution": {
+        "width": 4032,
+        "height": 3024
+      },
+      "imageFormat": "jpg",
+      "cameraSettings": "f/8.0, 1/125s, ISO 100"
+    }
+  ],
+  "submittedAt": "2024-01-15 20:00:00 UTC",
+  "constraints": {
+    "strategy": {
+      "type": "SingleLLM",
+      "config": {
+        "modelName": "gpt-4o-mini",
+        "temperature": 0.7,
+        "maxTokens": 4000
+      }
+    },
+    "maxVideoDuration": 60.0,
+    "preferredStyle": "cinematic",
+    "targetAudience": "family and friends",
+    "technicalLimits": ["max_segments_5", "transition_duration_2s"],
+    "customInstructions": ["focus on emotional moments", "include title card at beginning"]
+  }
+}

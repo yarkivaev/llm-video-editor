@@ -1,0 +1,27 @@
+{
+    "globalAudio": [],
+    "layoutCreatedAt": "2024-01-01T00:00:00Z",
+    "layoutId": "mock-layout-1",
+    "outputFormat": "mp4",
+    "outputFrameRate": 30,
+    "outputResolution": {
+        "height": 1080,
+        "width": 1920
+    },
+    "segments": [
+        {
+            "audioTracks": [],
+            "segmentEnd": 3,
+            "segmentId": "seg-1",
+            "segmentStart": 0,
+            "segmentType": {
+                "duration": 3,
+                "text": "My Travel Video",
+                "type": "TitleCard"
+            },
+            "textOverlays": [],
+            "transition": null
+        }
+    ],
+    "totalDuration": 60
+}

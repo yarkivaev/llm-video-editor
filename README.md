@@ -45,7 +45,46 @@ Generated layouts include:
 
 ## Usage
 
-### Basic Usage
+### Command Line Interface
+
+The system includes a command-line interface for processing media files:
+
+```bash
+# Basic usage with example files (uses mock LLM by default)
+stack exec llm-video-editor-exe -- \
+  --input examples/input.json \
+  --prompt examples/prompt.txt \
+  --output output.json
+
+# With real ChatGPT API
+USE_REAL_CHATGPT_API=true OPENAI_API_KEY="your-api-key-here" \
+stack exec llm-video-editor-exe -- \
+  --input examples/input.json \
+  --prompt examples/prompt.txt \
+  --output output.json \
+  --model "gpt-4o-mini" \
+  --temperature 0.7 \
+  --debug
+```
+
+#### CLI Options
+
+- `-i, --input INPUT_FILE`: Input JSON file containing media files and metadata
+- `-p, --prompt PROMPT_FILE`: Text file containing the user prompt for video editing
+- `-o, --output OUTPUT_FILE`: Output JSON file for the generated video layout
+- `--api-key API_KEY`: OpenAI API key (can also be set via OPENAI_API_KEY env var)
+- `--model MODEL`: LLM model to use (default: gpt-4o-mini)
+- `--temperature TEMP`: LLM temperature (0.0-1.0, default: 0.7)
+- `--max-tokens TOKENS`: Maximum tokens for LLM response
+- `-d, --debug`: Enable debug output
+
+#### Environment Variables
+
+- `USE_REAL_CHATGPT_API=true`: Enable real ChatGPT API (default: uses mock responses)
+- `OPENAI_API_KEY`: Your OpenAI API key for real API usage
+- `DEBUG_LLM_API=true`: Enable detailed API debugging (optional)
+
+### Programmatic Usage
 
 ```haskell
 import Types
@@ -118,17 +157,61 @@ stack exec llm-video-editor-exe
 
 ## Testing
 
+The project includes a comprehensive test suite covering unit tests, integration tests, and end-to-end tests.
+
+### Running All Tests
+
 ```bash
 stack test
 ```
 
-The test suite includes comprehensive unit tests for:
-- **LLM Prompt Generation**: Validates prompt creation from VideoRequest and AssemblyContext
-- **JSON Response Parsing**: Tests parsing LLM responses into VideoLayout structures  
-- **Error Handling**: Ensures graceful handling of malformed JSON and missing fields
-- **Helper Functions**: Tests media file formatting and constraint handling
+### CLI Integration Tests (Recommended)
 
-**Test Results**: 22 examples, 0 failures ✅
+Run CLI tests with mocked LLM responses (no API key required):
+
+```bash
+./scripts/run-cli-tests.sh
+```
+
+Or run directly:
+
+```bash
+stack test --ta '--match "CLI Integration Tests"'
+```
+
+### Test Categories
+
+1. **Unit Tests** (22 examples)
+   - **LLM Prompt Generation**: Validates prompt creation from VideoRequest and AssemblyContext
+   - **JSON Response Parsing**: Tests parsing LLM responses into VideoLayout structures  
+   - **Error Handling**: Ensures graceful handling of malformed JSON and missing fields
+   - **Helper Functions**: Tests media file formatting and constraint handling
+
+2. **CLI Integration Tests** (7 examples)
+   - **Basic Processing**: Tests successful video layout generation with mock LLM
+   - **Error Handling**: Tests graceful handling of missing files and invalid JSON
+   - **Parameter Validation**: Tests CLI arguments (model, temperature, debug mode)
+   - **Help Output**: Validates command-line help message
+
+3. **End-to-End CLI Tests** (2 examples)
+   - **Real API Integration**: Tests with actual ChatGPT API (requires OPENAI_API_KEY)
+   - **Error Handling**: Tests graceful handling of API errors and timeouts
+
+**Test Results**: 39 examples, 0 failures ✅ (9 pending without API key)
+
+### Integration Tests with Real ChatGPT API
+
+To test with real ChatGPT API (⚠️ incurs charges):
+
+```bash
+# Set your OpenAI API key
+export OPENAI_API_KEY='your-api-key-here'
+
+# Run integration tests
+./scripts/run-integration-tests.sh
+```
+
+See [Integration Tests Documentation](docs/INTEGRATION_TESTS.md) for detailed setup and usage.
 
 ## Project Structure
 
