@@ -1,6 +1,7 @@
 module Lib
     ( module Types
     , processVideoRequest
+    , processVideoRequestWithAssembler
     ) where
 
 import Types
@@ -33,3 +34,63 @@ processVideoRequest input = do
     , estimatedRenderTime = Just $ Duration 300.0
     , warnings = []
     }
+
+-- | Process video request using a VideoAssembler instance
+processVideoRequestWithAssembler :: VideoAssembler m => VideoRequest -> AssemblyContext -> m VideoEditorOutput
+processVideoRequestWithAssembler request context = do
+  -- Validate the request first
+  validationResult <- validateRequest request context
+  case validationResult of
+    Left err -> return $ VideoEditorOutput
+      { outputLayout = VideoLayout
+          { layoutId = pack "error"
+          , totalDuration = Duration 0.0
+          , segments = []
+          , globalAudio = []
+          , outputFormat = pack "mp4"
+          , outputResolution = Resolution 1920 1080
+          , outputFrameRate = 30.0
+          , layoutCreatedAt = submittedAt request
+          }
+      , processingStatus = Failed (SystemError $ pack $ show err)
+      , estimatedRenderTime = Nothing
+      , warnings = []
+      }
+    
+    Right validRequest -> do
+      -- Estimate assembly time
+      estimatedTime <- estimateAssemblyTime validRequest context
+      
+      -- Assemble the video
+      assemblyResult <- assembleVideo validRequest context
+      
+      case assemblyResult of
+        Success layout -> return $ VideoEditorOutput
+          { outputLayout = layout
+          , processingStatus = Completed
+          , estimatedRenderTime = Just estimatedTime
+          , warnings = []
+          }
+          
+        Failure err -> return $ VideoEditorOutput
+          { outputLayout = VideoLayout
+              { layoutId = pack "failed"
+              , totalDuration = Duration 0.0
+              , segments = []
+              , globalAudio = []
+              , outputFormat = pack "mp4"
+              , outputResolution = Resolution 1920 1080
+              , outputFrameRate = 30.0
+              , layoutCreatedAt = submittedAt validRequest
+              }
+          , processingStatus = Failed (SystemError $ pack $ show err)
+          , estimatedRenderTime = Just estimatedTime
+          , warnings = []
+          }
+          
+        PartialSuccess layout warnings -> return $ VideoEditorOutput
+          { outputLayout = layout
+          , processingStatus = Completed
+          , estimatedRenderTime = Just estimatedTime
+          , warnings = warnings
+          }
