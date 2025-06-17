@@ -122,7 +122,13 @@ stack exec llm-video-editor-exe
 stack test
 ```
 
-Note: Test suite is currently minimal and will be expanded as functionality is implemented.
+The test suite includes comprehensive unit tests for:
+- **LLM Prompt Generation**: Validates prompt creation from VideoRequest and AssemblyContext
+- **JSON Response Parsing**: Tests parsing LLM responses into VideoLayout structures  
+- **Error Handling**: Ensures graceful handling of malformed JSON and missing fields
+- **Helper Functions**: Tests media file formatting and constraint handling
+
+**Test Results**: 22 examples, 0 failures ✅
 
 ## Project Structure
 

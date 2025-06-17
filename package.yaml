@@ -23,6 +23,13 @@ dependencies:
 - base >= 4.7 && < 5
 - text
 - time
+- aeson
+- bytestring
+- http-client
+- http-client-tls
+- servant-client
+- transformers
+- mtl
 
 ghc-options:
 - -Wall
@@ -59,3 +66,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - llm-video-editor
+    - hspec
+    - QuickCheck

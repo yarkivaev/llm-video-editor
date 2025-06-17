@@ -1,2 +1,6 @@
+import Test.Hspec
+import qualified VideoAssembler.LLMSpec
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = hspec $ do
+  describe "VideoAssembler.LLM" VideoAssembler.LLMSpec.spec
