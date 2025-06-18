@@ -137,6 +137,11 @@ echo "  docker-compose up                         # Use docker-compose with prox
 echo "  docker run -e HTTP_PROXY=... [image]     # Manual proxy setting"
 echo "  docker run --network=host [image]        # Use host networking (proxy on localhost)"
 echo
+echo "Unicode/Encoding Fix Options:"
+echo "  ./docker-run-wrapper.sh --silent [args]  # Run without terminal output"
+echo "  ./docker-run-wrapper.sh --to-file [args] # Redirect output to file"
+echo "  docker run -e LC_ALL=C [image] [args]    # Use C locale (ASCII only)"
+echo
 echo "The Dockerfile is ready for use. Choose build method based on your needs:"
 echo "- Full build: Complete but slow (20-30 min)"
 echo "- Pre-built: Fast but requires local Stack installation"

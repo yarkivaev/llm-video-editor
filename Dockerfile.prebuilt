@@ -22,7 +22,16 @@ RUN apt-get update && apt-get install -y \
     libncurses6 \
     zlib1g \
     ca-certificates \
+    locales \
     && rm -rf /var/lib/apt/lists/*
+
+# Set up UTF-8 locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 # Create a non-root user
 RUN useradd -m -u 1000 appuser
