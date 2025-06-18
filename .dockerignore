@@ -1,0 +1,14 @@
+.git
+.stack-work
+dist-newstyle
+.cabal-sandbox
+cabal.sandbox.config
+*.o
+*.hi
+.DS_Store
+.vscode
+*.md
+docs/
+examples/
+test/
+scripts/

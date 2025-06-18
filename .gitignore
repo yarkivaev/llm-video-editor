@@ -79,3 +79,5 @@ local.yaml
 *.aac
 *.ogg
 *.wma
+
+bin/

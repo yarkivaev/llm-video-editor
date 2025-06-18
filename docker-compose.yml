@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Default service with bridge networking (use host.docker.internal for localhost proxy)
+  llm-video-editor:
+    image: llm-video-editor:prebuilt
+    environment:
+      - USE_REAL_CHATGPT_API=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Replace localhost/127.0.0.1 with host.docker.internal for Docker networking
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
+      - no_proxy=${NO_PROXY}
+    volumes:
+      - ./examples:/app/examples:ro
+      - ./:/app/output
+    command: >
+      --input /app/examples/input.json
+      --prompt /app/examples/prompt.txt
+      --output /app/output/docker-compose-output.json
+      --model gpt-4o-mini
+      --temperature 0.7
+
+  # Alternative service with host networking (for localhost proxy servers)
+  llm-video-editor-host:
+    image: llm-video-editor:prebuilt
+    network_mode: host
+    environment:
+      - USE_REAL_CHATGPT_API=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
+      - no_proxy=${NO_PROXY}
+    volumes:
+      - ./examples:/app/examples:ro
+      - ./:/app/output
+    command: >
+      --input /app/examples/input.json
+      --prompt /app/examples/prompt.txt
+      --output /app/output/docker-compose-host-output.json
+      --model gpt-4o-mini
+      --temperature 0.7

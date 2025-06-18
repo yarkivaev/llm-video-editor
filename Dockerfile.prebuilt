@@ -1,0 +1,43 @@
+# Alternative Dockerfile for pre-built binary
+# Build the project locally first: stack build --copy-bins --local-bin-path ./bin
+FROM debian:bookworm-slim
+
+# Accept proxy build arguments
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+# Set proxy environment variables if provided
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libgmp10 \
+    libffi8 \
+    libncurses6 \
+    zlib1g \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+RUN useradd -m -u 1000 appuser
+
+# Copy the pre-built executable (build locally first)
+COPY bin/llm-video-editor-exe /usr/local/bin/llm-video-editor
+
+# Make executable
+RUN chmod +x /usr/local/bin/llm-video-editor
+
+# Switch to non-root user
+USER appuser
+
+# Set working directory
+WORKDIR /home/appuser
+
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/llm-video-editor"]
