@@ -15,24 +15,48 @@ import Control.Monad (when)
 import Data.Time (UTCTime, parseTimeOrError, defaultTimeLocale)
 import qualified Data.Aeson.Types as Aeson
 import VideoAssembler.LLM
+import VideoExporter
 import Types
 import qualified Types.Assembly as Assembly
 
--- | CLI options
-data Options = Options
-  { optInputFile      :: FilePath
-  , optPromptFile     :: FilePath  
-  , optOutputFile     :: FilePath
-  , optApiKey         :: Maybe Text
-  , optModel          :: Text
-  , optTemperature    :: Double
-  , optMaxTokens      :: Maybe Int
-  , optDebug          :: Bool
+-- | CLI commands
+data Command
+  = Generate GenerateOptions
+  | Render VideoRenderOptions
+  deriving (Show)
+
+-- | Generate layout options
+data GenerateOptions = GenerateOptions
+  { genInputFile      :: FilePath
+  , genPromptFile     :: FilePath  
+  , genOutputFile     :: FilePath
+  , genApiKey         :: Maybe Text
+  , genModel          :: Text
+  , genTemperature    :: Double
+  , genMaxTokens      :: Maybe Int
+  , genDebug          :: Bool
   } deriving (Show)
 
--- | Parse CLI options
-options :: Parser Options
-options = Options
+-- | Render video options
+data VideoRenderOptions = VideoRenderOptions
+  { renderLayoutFile  :: FilePath
+  , renderVideoDir    :: FilePath
+  , renderPhotoDir    :: FilePath
+  , renderAudioDir    :: FilePath
+  , renderOutputVideo :: FilePath
+  , renderDebug       :: Bool
+  } deriving (Show)
+
+-- | Parse CLI commands
+commands :: Parser Command
+commands = subparser
+  ( command "generate" (info generateOptions (progDesc "Generate video layout from media files and prompt"))
+  <> command "render" (info videoRenderOptions (progDesc "Render video from layout JSON file"))
+  )
+
+-- | Parse generate command options
+generateOptions :: Parser Command
+generateOptions = Generate <$> (GenerateOptions
   <$> strOption
       ( long "input"
      <> short 'i'
@@ -69,14 +93,44 @@ options = Options
   <*> switch
       ( long "debug"
      <> short 'd'
-     <> help "Enable debug output" )
+     <> help "Enable debug output" ))
+
+-- | Parse render command options
+videoRenderOptions :: Parser Command
+videoRenderOptions = Render <$> (VideoRenderOptions
+  <$> strOption
+      ( long "layout"
+     <> short 'l'
+     <> metavar "LAYOUT_FILE"
+     <> help "Input JSON file containing video layout" )
+  <*> strOption
+      ( long "video-dir"
+     <> metavar "VIDEO_DIR"
+     <> help "Directory containing source video files" )
+  <*> strOption
+      ( long "photo-dir"
+     <> metavar "PHOTO_DIR"
+     <> help "Directory containing source photo files" )
+  <*> strOption
+      ( long "audio-dir"
+     <> metavar "AUDIO_DIR"
+     <> help "Directory containing source audio files" )
+  <*> strOption
+      ( long "output"
+     <> short 'o'
+     <> metavar "OUTPUT_VIDEO"
+     <> help "Output video file path" )
+  <*> switch
+      ( long "debug"
+     <> short 'd'
+     <> help "Enable debug output" ))
 
 -- | Program description
-opts :: ParserInfo Options
-opts = info (options <**> helper)
+opts :: ParserInfo Command
+opts = info (commands <**> helper)
   ( fullDesc
- <> progDesc "Generate video layouts using LLM from media files and user prompts"
- <> header "llm-video-editor - AI-powered video editing layout generator" )
+ <> progDesc "AI-powered video editing: generate layouts from prompts or render videos from layouts"
+ <> header "llm-video-editor - AI video editor with layout generation and video rendering" )
 
 -- | Input file format for media files and metadata
 data InputData = InputData
@@ -178,115 +232,47 @@ instance FromJSON LLMConfig where
     <*> o .:? "apiEndpoint"
     <*> o .:? "apiKey"
 
-instance FromJSON Location where
-  parseJSON = withObject "Location" $ \o -> Location
-    <$> o .: "latitude"
-    <*> o .: "longitude"
-    <*> o .:? "address"
-
--- | Add ToJSON instances for output
-instance ToJSON VideoLayout where
-  toJSON layout = object
-    [ "layoutId" .= layoutId layout
-    , "totalDuration" .= totalDuration layout
-    , "segments" .= segments layout
-    , "globalAudio" .= globalAudio layout
-    , "outputFormat" .= outputFormat layout
-    , "outputResolution" .= outputResolution layout
-    , "outputFrameRate" .= outputFrameRate layout
-    , "layoutCreatedAt" .= layoutCreatedAt layout
-    ]
-
-instance ToJSON VideoSegment where
-  toJSON segment = object
-    [ "segmentId" .= segmentId segment
-    , "segmentType" .= segmentType segment
-    , "segmentStart" .= segmentStart segment
-    , "segmentEnd" .= segmentEnd segment
-    , "textOverlays" .= textOverlays segment
-    , "audioTracks" .= audioTracks segment
-    , "transition" .= transition segment
-    ]
-
-instance ToJSON SegmentType where
-  toJSON segType = case segType of
-    VideoClip ref -> object ["type" .= ("VideoClip" :: Text), "mediaReference" .= ref]
-    PhotoClip ref dur -> object ["type" .= ("PhotoClip" :: Text), "mediaReference" .= ref, "duration" .= dur]
-    TitleCard text dur -> object ["type" .= ("TitleCard" :: Text), "text" .= text, "duration" .= dur]
-    TransitionSegment trans -> object ["type" .= ("TransitionSegment" :: Text), "transition" .= trans]
-
-instance ToJSON MediaReference where
-  toJSON ref = object
-    [ "mediaId" .= mediaId ref
-    , "startTime" .= startTime ref
-    , "endTime" .= endTime ref
-    , "playbackSpeed" .= playbackSpeed ref
-    ]
-
-instance ToJSON Duration where
-  toJSON (Duration d) = toJSON d
-
-instance ToJSON Resolution where
-  toJSON res = object
-    [ "width" .= width res
-    , "height" .= height res
-    ]
-
-instance ToJSON TextOverlay where
-  toJSON overlay = object
-    [ "overlayText" .= overlayText overlay
-    , "overlayPosition" .= overlayPosition overlay
-    , "overlayDuration" .= overlayDuration overlay
-    , "overlayStyle" .= overlayStyle overlay
-    ]
-
-instance ToJSON AudioTrack where
-  toJSON track = object
-    [ "audioSource" .= audioSource track
-    , "audioStart" .= audioStart track
-    , "audioEnd" .= audioEnd track
-    , "volume" .= volume track
-    , "fadeIn" .= fadeIn track
-    , "fadeOut" .= fadeOut track
-    ]
-
-instance ToJSON Transition where
-  toJSON trans = case trans of
-    Cut -> object ["type" .= ("Cut" :: Text)]
-    Fade dur -> object ["type" .= ("Fade" :: Text), "duration" .= dur]
-    Dissolve dur -> object ["type" .= ("Dissolve" :: Text), "duration" .= dur]
-    Wipe wType dur -> object ["type" .= ("Wipe" :: Text), "wipeType" .= wType, "duration" .= dur]
-    CustomTransition name dur -> object ["type" .= ("CustomTransition" :: Text), "name" .= name, "duration" .= dur]
-
-instance ToJSON Timestamp where
-  toJSON (Timestamp time) = toJSON time
+-- JSON instances are now defined in Types modules
 
 -- | Main CLI entry point
 main :: IO ()
 main = do
-  opts' <- execParser opts
-  result <- runCLI opts'
+  cmd <- execParser opts
+  result <- runCommand cmd
   case result of
     Left err -> do
       putStrLn $ "Error: " ++ err
       exitWith (ExitFailure 1)
-    Right _ -> putStrLn "✅ Video layout generated successfully!"
+    Right msg -> putStrLn $ "✅ " ++ msg
 
--- | Run the CLI application
-runCLI :: Options -> IO (Either String ())
-runCLI opts' = do
-  when (optDebug opts') $ putStrLn "🔧 Starting LLM Video Editor CLI..."
+-- | Run the CLI command
+runCommand :: Command -> IO (Either String String)
+runCommand (Generate opts') = do
+  result <- runGenerate opts'
+  case result of
+    Left err -> return $ Left err
+    Right _ -> return $ Right "Video layout generated successfully!"
+runCommand (Render opts') = do
+  result <- runRender opts'
+  case result of
+    Left err -> return $ Left err
+    Right _ -> return $ Right "Video rendered successfully!"
+
+-- | Run the generate command
+runGenerate :: GenerateOptions -> IO (Either String ())
+runGenerate opts' = do
+  when (genDebug opts') $ putStrLn "🔧 Starting LLM Video Editor CLI..."
 
   -- Read input file
-  when (optDebug opts') $ putStrLn $ "📖 Reading input file: " ++ optInputFile opts'
-  inputResult <- readInputFile (optInputFile opts')
+  when (genDebug opts') $ putStrLn $ "📖 Reading input file: " ++ genInputFile opts'
+  inputResult <- readInputFile (genInputFile opts')
   case inputResult of
     Left err -> return $ Left $ "Failed to read input file: " ++ err
     Right inputData -> do
       
       -- Read prompt file
-      when (optDebug opts') $ putStrLn $ "📝 Reading prompt file: " ++ optPromptFile opts'
-      promptResult <- readPromptFile (optPromptFile opts')
+      when (genDebug opts') $ putStrLn $ "📝 Reading prompt file: " ++ genPromptFile opts'
+      promptResult <- readPromptFile (genPromptFile opts')
       case promptResult of
         Left err -> return $ Left $ "Failed to read prompt file: " ++ err
         Right prompt -> do
@@ -300,38 +286,75 @@ runCLI opts' = do
           -- Create assembly context
           let assemblyContext = maybe defaultAssemblyContext id (inputConstraints inputData)
           
-          when (optDebug opts') $ do
+          when (genDebug opts') $ do
             putStrLn $ "🎯 Request ID: " ++ T.unpack (inputRequestId inputData)
             putStrLn $ "📹 Media files: " ++ show (length (inputMediaFiles inputData))
             putStrLn $ "🤖 Model: " ++ T.unpack (modelName llmConfig)
             putStrLn $ "🌡️  Temperature: " ++ show (temperature llmConfig)
           
           -- Generate video layout
-          when (optDebug opts') $ putStrLn "🚀 Generating video layout with LLM..."
+          when (genDebug opts') $ putStrLn "🚀 Generating video layout with LLM..."
           result <- createLLMAssembler llmConfig videoRequest assemblyContext
           
           case result of
             Assembly.Success layout -> do
-              when (optDebug opts') $ putStrLn "✅ Layout generated successfully"
+              when (genDebug opts') $ putStrLn "✅ Layout generated successfully"
               
               -- Write output file
-              when (optDebug opts') $ putStrLn $ "💾 Writing output file: " ++ optOutputFile opts'
-              writeResult <- writeOutputFile (optOutputFile opts') layout
+              when (genDebug opts') $ putStrLn $ "💾 Writing output file: " ++ genOutputFile opts'
+              writeResult <- writeOutputFile (genOutputFile opts') layout
               case writeResult of
                 Left err -> return $ Left $ "Failed to write output file: " ++ err
                 Right _ -> return $ Right ()
                 
             Assembly.Failure err -> return $ Left $ "LLM assembly failed: " ++ show err
             Assembly.PartialSuccess layout warnings -> do
-              when (optDebug opts') $ do
+              when (genDebug opts') $ do
                 putStrLn "⚠️  Partial success with warnings:"
                 mapM_ (putStrLn . ("  - " ++)) (map T.unpack warnings)
               
               -- Write output file anyway
-              writeResult <- writeOutputFile (optOutputFile opts') layout
+              writeResult <- writeOutputFile (genOutputFile opts') layout
               case writeResult of
                 Left err -> return $ Left $ "Failed to write output file: " ++ err
                 Right _ -> return $ Right ()
+
+-- | Run the render command
+runRender :: VideoRenderOptions -> IO (Either String ())
+runRender opts' = do
+  when (renderDebug opts') $ putStrLn "🔧 Starting Video Renderer..."
+
+  -- Read layout file
+  when (renderDebug opts') $ putStrLn $ "📖 Reading layout file: " ++ renderLayoutFile opts'
+  
+  -- Create media sources
+  let mediaSources = createMediaSources (renderVideoDir opts') (renderPhotoDir opts') (renderAudioDir opts')
+      config = defaultExportConfig mediaSources
+      outputPath = createOutputPath (renderOutputVideo opts')
+  
+  when (renderDebug opts') $ do
+    putStrLn $ "📁 Video source directory: " ++ renderVideoDir opts'
+    putStrLn $ "📁 Photo source directory: " ++ renderPhotoDir opts'
+    putStrLn $ "📁 Audio source directory: " ++ renderAudioDir opts'
+    putStrLn $ "🎬 Output video: " ++ renderOutputVideo opts'
+  
+  -- Validate configuration
+  when (renderDebug opts') $ putStrLn "🔍 Validating export configuration..."
+  validationResult <- validateExportConfig config
+  case validationResult of
+    Left err -> return $ Left $ "Configuration validation failed: " ++ T.unpack err
+    Right _ -> do
+      
+      -- Export video from layout file
+      when (renderDebug opts') $ putStrLn "🚀 Rendering video from layout..."
+      result <- exportVideoFromFile (renderLayoutFile opts') config outputPath
+      
+      case result of
+        Right (RenderSuccess outputFile) -> do
+          when (renderDebug opts') $ putStrLn $ "✅ Video rendered successfully: " ++ outputFile
+          return $ Right ()
+        Right (RenderFailure err) -> return $ Left $ "Video rendering failed: " ++ show err
+        Left parseErr -> return $ Left $ "Failed to parse layout file: " ++ parseErr
 
 -- | Read and parse input JSON file
 readInputFile :: FilePath -> IO (Either String InputData)
@@ -365,14 +388,14 @@ createVideoRequest inputData prompt = do
     }
 
 -- | Create LLM configuration from CLI options
-createLLMConfig :: Options -> LLMConfig
+createLLMConfig :: GenerateOptions -> LLMConfig
 createLLMConfig opts' = LLMConfig
-  { modelName = optModel opts'
-  , temperature = optTemperature opts'
-  , maxTokens = optMaxTokens opts'
+  { modelName = genModel opts'
+  , temperature = genTemperature opts'
+  , maxTokens = genMaxTokens opts'
   , systemPrompt = Nothing
   , apiEndpoint = Nothing
-  , apiKey = optApiKey opts'
+  , apiKey = genApiKey opts'
   }
 
 -- | Default assembly context

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module VideoAssembler.LLM
@@ -423,6 +424,7 @@ instance FromJSON VideoSegment where
     <*> o .: "audioTracks"
     <*> o .:? "transition"
 
+
 instance FromJSON SegmentType where
   parseJSON = withObject "SegmentType" $ \o -> do
     segType <- o .: "type"
@@ -438,6 +440,7 @@ instance FromJSON SegmentType where
         <*> (Duration <$> o .: "duration")
       _ -> fail $ "Unknown segment type: " ++ segType
 
+
 instance FromJSON MediaReference where
   parseJSON = withObject "MediaReference" $ \o -> MediaReference
     <$> o .: "mediaId"
@@ -449,7 +452,6 @@ instance FromJSON Resolution where
   parseJSON = withObject "Resolution" $ \o -> Resolution
     <$> o .: "width"
     <*> o .: "height"
-
 
 instance FromJSON TextOverlay where
   parseJSON = withObject "TextOverlay" $ \o -> TextOverlay
@@ -482,3 +484,15 @@ instance FromJSON Transition where
         "CustomTransition" -> CustomTransition <$> o .: "name" <*> (Duration <$> o .: "duration")
         _ -> fail $ "Unknown transition type: " ++ transType
     _ -> fail "Expected Object or null for Transition"
+
+instance FromJSON VideoLayout where
+  parseJSON = withObject "VideoLayout" $ \o -> do
+    layoutId <- o .: "layoutId"
+    totalDuration <- Duration <$> o .: "totalDuration"
+    segments <- o .: "segments"
+    globalAudio <- o .: "globalAudio"
+    outputFormat <- o .: "outputFormat"
+    outputResolution <- o .: "outputResolution"
+    outputFrameRate <- o .: "outputFrameRate"
+    layoutCreatedAt <- Timestamp <$> o .: "layoutCreatedAt"
+    return VideoLayout{..}
