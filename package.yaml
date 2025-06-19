@@ -36,6 +36,8 @@ dependencies:
 - vector
 - optparse-applicative
 - filepath
+- directory
+- process
 
 ghc-options:
 - -Wall

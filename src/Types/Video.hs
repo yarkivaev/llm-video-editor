@@ -10,6 +10,7 @@ module Types.Video
   , MediaReference (..)
   ) where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Common (Duration, Resolution, Timestamp)
@@ -79,3 +80,12 @@ data VideoLayout = VideoLayout
   , outputFrameRate  :: Double
   , layoutCreatedAt  :: Timestamp
   } deriving (Show, Eq, Generic)
+
+-- JSON instances (ToJSON only, FromJSON instances are in VideoAssembler.LLM to avoid orphan warnings)
+instance ToJSON MediaReference
+instance ToJSON Transition
+instance ToJSON SegmentType  
+instance ToJSON TextOverlay
+instance ToJSON AudioTrack
+instance ToJSON VideoSegment
+instance ToJSON VideoLayout

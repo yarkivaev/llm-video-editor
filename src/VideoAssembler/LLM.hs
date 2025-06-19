@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module VideoAssembler.LLM
@@ -482,3 +483,15 @@ instance FromJSON Transition where
         "CustomTransition" -> CustomTransition <$> o .: "name" <*> (Duration <$> o .: "duration")
         _ -> fail $ "Unknown transition type: " ++ transType
     _ -> fail "Expected Object or null for Transition"
+
+instance FromJSON VideoLayout where
+  parseJSON = withObject "VideoLayout" $ \o -> do
+    layoutId <- o .: "layoutId"
+    totalDuration <- Duration <$> o .: "totalDuration"
+    segments <- o .: "segments"
+    globalAudio <- o .: "globalAudio"
+    outputFormat <- o .: "outputFormat"
+    outputResolution <- o .: "outputResolution"
+    outputFrameRate <- o .: "outputFrameRate"
+    layoutCreatedAt <- Timestamp <$> o .: "layoutCreatedAt"
+    return VideoLayout{..}
