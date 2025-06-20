@@ -68,7 +68,8 @@ instance VideoRenderer FFmpegRenderer where
         Right _ -> do
           -- Generate FFmpeg command
           ffmpegCmd <- generateFFmpegCommand config layout context
-          
+          putStrLn (unwords ffmpegCmd) --HOTFIX
+
           -- Execute FFmpeg
           result <- executeFFmpeg config ffmpegCmd
           case result of

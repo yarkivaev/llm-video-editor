@@ -8,6 +8,7 @@ module VideoRenderer
   , RenderResult (..)
   , RenderError (..)
   , MediaSources (..)
+  , singleMediaSources
   , OutputPath (..)
   , RenderOptions (..)
   , defaultRenderOptions
@@ -30,6 +31,9 @@ data MediaSources = MediaSources
   , photoSourceDir :: FilePath  -- ^ Directory containing photo files
   , audioSourceDir :: FilePath  -- ^ Directory containing audio files
   } deriving (Show, Eq, Generic)
+
+singleMediaSources :: FilePath -> MediaSources
+singleMediaSources sourceDir = MediaSources sourceDir sourceDir sourceDir
 
 -- | Output file path
 newtype OutputPath = OutputPath FilePath
