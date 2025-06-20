@@ -18,13 +18,25 @@ import VideoExporter
 import VideoRenderer (singleMediaSources)
 
 
+videoSegment0 :: VideoSegment
+videoSegment0 = VideoSegment
+  { segmentId = T.pack "test-title-seg"
+  , segmentType = VideoClip $ 
+      MediaReference (T.pack "stream.mp4") (Duration 0) (Duration 2) Nothing
+  , segmentStart = Duration 0.0
+  , segmentEnd = Duration 2.0
+  , textOverlays = []
+  , audioTracks = []
+  , transition = Nothing
+  }
+
 videoSegment :: VideoSegment
 videoSegment = VideoSegment
   { segmentId = T.pack "test-title-seg"
   , segmentType = VideoClip $ 
-      MediaReference (T.pack "stream.mp4") (Duration 0) (Duration 10) Nothing
-  , segmentStart = Duration 0.0
-  , segmentEnd = Duration 10.0
+      MediaReference (T.pack "video2.mp4") (Duration 2) (Duration 12) Nothing
+  , segmentStart = Duration 2.0
+  , segmentEnd = Duration 12.0
   , textOverlays = []
   , audioTracks = []
   , transition = Nothing
@@ -35,8 +47,8 @@ videoLayout = do
   now <- getCurrentTime
   return VideoLayout
     { layoutId = "integration-test-layout"
-    , totalDuration = Duration 10.0  -- 10 second video
-    , segments = [videoSegment]
+    , totalDuration = Duration 12.0  -- 10 second video
+    , segments = [videoSegment0, videoSegment]
     , globalAudio = []
     , outputFormat = "mp4"
     , outputResolution = Resolution 1280 720  -- 720p for faster rendering
