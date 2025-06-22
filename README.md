@@ -314,6 +314,74 @@ stack build
 stack exec llm-video-editor-exe
 ```
 
+## Snippets - Quick Testing Environment
+
+The project includes a `snippets/` folder for quick testing and experimentation with the project modules. This is useful for:
+
+- Testing individual functions and types
+- Experimenting with new features
+- Learning the codebase
+- Prototyping before implementing in the main application
+
+### Using the Snippets Environment
+
+The snippets environment has access to all project modules and can be run with:
+
+```bash
+# Run the snippets executable (shows available modules)
+stack exec snippets
+
+# Or run it directly with stack-3.3.1 if stack is aliased
+stack-3.3.1 exec snippets
+```
+
+### Creating Your Own Snippets
+
+1. **Edit existing files:**
+   - `snippets/Snippets.hs` - Main snippets file with all imports
+   - `snippets/Example.hs` - Example usage of project types
+
+2. **Create new snippet files:** Add new `.hs` files in the `snippets/` directory
+
+3. **Available modules to import:**
+   - `Lib` - Core functionality
+   - `Types` - All type definitions  
+   - `Types.Common` - Duration, Resolution, Location, Timestamp
+   - `Types.Media` - VideoFile, PhotoFile, VideoRequest, UserPrompt
+   - `Types.Video` - VideoLayout, VideoSegment, AudioTrack
+   - `Types.Assembly` - VideoAssembler, AssemblyContext, AssemblyStrategy
+   - `Types.System` - VideoEditorInput, VideoEditorOutput
+   - `VideoAssembler.LLM` - LLM integration
+   - `VideoExporter` - Video export functionality
+   - `VideoRenderer` - Video rendering
+   - `VideoRenderer.FFmpeg` - FFmpeg integration
+
+### Example Usage
+
+```haskell
+-- In snippets/MyTest.hs
+module MyTest where
+
+import Types.Common
+import Types.Media
+
+-- Test creating a video request
+myVideoRequest :: VideoRequest  
+myVideoRequest = VideoRequest
+  { requestId = "my-test"
+  , mediaFiles = []
+  , userPrompt = "Create a test video"
+  , submittedAt = Timestamp someUTCTime
+  }
+```
+
+After creating your snippets, rebuild and run:
+
+```bash
+stack build
+stack exec snippets
+```
+
 ## Testing
 
 The project includes a comprehensive test suite covering unit tests, integration tests, and end-to-end tests.

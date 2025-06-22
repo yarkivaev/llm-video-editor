@@ -1,0 +1,72 @@
+{
+  "type": "video",
+  "metadata": {
+    "fileName": "Business center_low.mp4",
+    "filePath": "/content/Business center_low.mp4",
+    "fileSize": 18208516,
+    "createdAt": "2025-06-22 12:48:58 UTC",
+    "description": "a street with a sign that says ' no ' a statue of a lion in front of a building",
+    "tags": [
+      "is",
+      "no",
+      "building",
+      "a",
+      "lion"
+    ]
+  },
+  "duration": 23.49,
+  "resolution": {
+    "width": 1280,
+    "height": 720
+  },
+  "frameRate": 29.97002997002997,
+  "hasAudio": true,
+  "videoFormat": "mp4",
+  "contentAnalysis": {
+    "contentOverview": "a street with a sign that says ' no ' a statue of a lion in front of a building a person walking down a sidewalk next to a train a tree with lights on it is in the window a person walking down the sidewalk with lights on",
+    "actionIntroduction": "a street with a sign that says ' no '",
+    "timeBoundDetails": [
+      {
+        "detailStartTime": 0.0,
+        "detailEndTime": 4.7,
+        "detailDescription": "a street with a sign that says ' no '",
+        "detailConfidence": 0.82
+      },
+      {
+        "detailStartTime": 4.7,
+        "detailEndTime": 9.4,
+        "detailDescription": "a statue of a lion in front of a building",
+        "detailConfidence": 0.82
+      },
+      {
+        "detailStartTime": 9.4,
+        "detailEndTime": 14.09,
+        "detailDescription": "a person walking down a sidewalk next to a train",
+        "detailConfidence": 0.81
+      },
+      {
+        "detailStartTime": 14.09,
+        "detailEndTime": 18.79,
+        "detailDescription": "a person walking down the sidewalk with lights on",
+        "detailConfidence": 0.81
+      },
+      {
+        "detailStartTime": 18.79,
+        "detailEndTime": 23.49,
+        "detailDescription": "a tree with lights on it is in the window",
+        "detailConfidence": 0.8
+      }
+    ],
+    "detectedObjects": [
+      "is",
+      "no",
+      "building",
+      "a",
+      "lion"
+    ],
+    "detectedScenes": [
+      "outdoor"
+    ],
+    "estimatedMood": "neutral"
+  }
+}

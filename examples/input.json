@@ -4,65 +4,363 @@
     {
       "type": "video",
       "metadata": {
-        "fileName": "vacation_beach.mp4",
-        "filePath": "/media/videos/vacation_beach.mp4",
-        "fileSize": 104857600,
-        "createdAt": "2024-01-15 14:30:00 UTC",
-        "description": "Beach vacation footage with family",
-        "tags": ["vacation", "beach", "family"]
+        "fileName": "Chocolate2_low.mp4",
+        "filePath": "Chocolate2_low.mp4",
+        "fileSize": 6981142,
+        "createdAt": "2025-06-22 12:46:47 UTC",
+        "description": "a man in a black jacket and mask is standing near boxes a man standing at a counter with a box of food",
+        "tags": [
+          "at",
+          "is",
+          "near",
+          "a",
+          "room"
+        ]
       },
-      "duration": 120.5,
+      "duration": 8.07,
       "resolution": {
-        "width": 1920,
-        "height": 1080
+        "width": 1280,
+        "height": 720
       },
-      "frameRate": 30.0,
+      "frameRate": 29.97002997002997,
       "hasAudio": true,
       "videoFormat": "mp4",
       "contentAnalysis": {
-        "contentOverview": "Family enjoying a sunny day at the beach",
-        "actionIntroduction": "Video shows family members playing in the sand and waves",
+        "contentOverview": "a woman standing at a counter with boxes a man in a black jacket and mask is standing near boxes a room filled with boxes and boxes a man standing at a counter with a box of food a woman standing in front of a counter filled with food",
+        "actionIntroduction": "a man standing at a counter with a box of food",
         "timeBoundDetails": [
           {
             "detailStartTime": 0.0,
-            "detailEndTime": 30.0,
-            "detailDescription": "Family setting up beach umbrella and chairs",
-            "detailConfidence": 0.9
+            "detailEndTime": 1.61,
+            "detailDescription": "a man standing at a counter with a box of food",
+            "detailConfidence": 0.82
           },
           {
-            "detailStartTime": 30.0,
-            "detailEndTime": 90.0,
-            "detailDescription": "Children playing in the waves and building sandcastles",
-            "detailConfidence": 0.85
+            "detailStartTime": 1.61,
+            "detailEndTime": 3.23,
+            "detailDescription": "a man in a black jacket and mask is standing near boxes",
+            "detailConfidence": 0.82
           },
           {
-            "detailStartTime": 90.0,
-            "detailEndTime": 120.5,
-            "detailDescription": "Family packing up and preparing to leave",
+            "detailStartTime": 3.23,
+            "detailEndTime": 4.84,
+            "detailDescription": "a room filled with boxes and boxes",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 4.84,
+            "detailEndTime": 6.46,
+            "detailDescription": "a woman standing at a counter with boxes",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 6.46,
+            "detailEndTime": 8.07,
+            "detailDescription": "a woman standing in front of a counter filled with food",
             "detailConfidence": 0.8
           }
         ],
-        "detectedObjects": ["umbrella", "chairs", "children", "waves", "sand"],
-        "detectedScenes": ["outdoor", "beach", "sunny"],
-        "estimatedMood": "happy and relaxed"
+        "detectedObjects": [
+          "at",
+          "is",
+          "near",
+          "a",
+          "room"
+        ],
+        "detectedScenes": [
+          "outdoor",
+          "indoor"
+        ],
+        "estimatedMood": "neutral"
       }
     },
     {
-      "type": "photo",
+      "type": "video",
       "metadata": {
-        "fileName": "sunset_photo.jpg",
-        "filePath": "/media/photos/sunset_photo.jpg",
-        "fileSize": 2097152,
-        "createdAt": "2024-01-15 18:45:00 UTC",
-        "description": "Beautiful sunset over the ocean",
-        "tags": ["sunset", "ocean", "scenic"]
+        "fileName": "Chocolate3_low.mp4",
+        "filePath": "Chocolate3_low.mp4",
+        "fileSize": 8471199,
+        "createdAt": "2025-06/content/-22 12:47:31 UTC",
+        "description": "a person holding a piece of meat in front of a counter a person holding a piece of chocolate in front of a display case",
+        "tags": [
+          "meat",
+          "is",
+          "display",
+          "cell",
+          "a"
+        ]
       },
+      "duration": 13.31,
       "resolution": {
-        "width": 4032,
-        "height": 3024
+        "width": 1280,
+        "height": 720
       },
-      "imageFormat": "jpg",
-      "cameraSettings": "f/8.0, 1/125s, ISO 100"
+      "frameRate": 29.97002997002997,
+      "hasAudio": true,
+      "videoFormat": "mp4",
+      "contentAnalysis": {
+        "contentOverview": "a person holding a piece of chocolate in front of a display case a woman is seen in the mirror of a restaurant a woman in a hat and scarf is holding a cell a restaurant with a counter and a counter with a lot of food a person holding a piece of meat in front of a counter",
+        "actionIntroduction": "a person holding a piece of chocolate in front of a display case",
+        "timeBoundDetails": [
+          {
+            "detailStartTime": 0.0,
+            "detailEndTime": 2.66,
+            "detailDescription": "a person holding a piece of chocolate in front of a display case",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 2.66,
+            "detailEndTime": 5.32,
+            "detailDescription": "a person holding a piece of meat in front of a counter",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 5.32,
+            "detailEndTime": 7.99,
+            "detailDescription": "a restaurant with a counter and a counter with a lot of food",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 7.99,
+            "detailEndTime": 10.65,
+            "detailDescription": "a woman in a hat and scarf is holding a cell",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 10.65,
+            "detailEndTime": 13.31,
+            "detailDescription": "a woman is seen in the mirror of a restaurant",
+            "detailConfidence": 0.8
+          }
+        ],
+        "detectedObjects": [
+          "meat",
+          "is",
+          "display",
+          "cell",
+          "a"
+        ],
+        "detectedScenes": [
+          "outdoor"
+        ],
+        "estimatedMood": "neutral"
+      }
+    },
+    {
+      "type": "video",
+      "metadata": {
+        "fileName": "Chocolate4_low.mp4",
+        "filePath": "/content/Chocolate4_low.mp4",
+        "fileSize": 2944045,
+        "createdAt": "2025-06-22 12:42:17 UTC",
+        "description": "a woman wearing a hat and scarf in a store",
+        "tags": [
+          "hat",
+          "is",
+          "in",
+          "outside",
+          "woman"
+        ]
+      },
+      "duration": 4.35,
+      "resolution": {
+        "width": 1280,
+        "height": 720
+      },
+      "frameRate": 29.97002997002997,
+      "hasAudio": true,
+      "videoFormat": "mp4",
+      "contentAnalysis": {
+        "contentOverview": "a woman in a hat and scarf is standing outside a woman wearing a blue scarf and hat a woman wearing a hat and scarf in a store",
+        "actionIntroduction": "a woman wearing a hat and scarf in a store",
+        "timeBoundDetails": [
+          {
+            "detailStartTime": 0.0,
+            "detailEndTime": 0.87,
+            "detailDescription": "a woman wearing a hat and scarf in a store",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 0.87,
+            "detailEndTime": 1.74,
+            "detailDescription": "a woman wearing a hat and scarf in a store",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 1.74,
+            "detailEndTime": 2.61,
+            "detailDescription": "a woman wearing a hat and scarf in a store",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 2.61,
+            "detailEndTime": 3.48,
+            "detailDescription": "a woman wearing a blue scarf and hat",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 3.48,
+            "detailEndTime": 4.35,
+            "detailDescription": "a woman in a hat and scarf is standing outside",
+            "detailConfidence": 0.8
+          }
+        ],
+        "detectedObjects": [
+          "hat",
+          "is",
+          "in",
+          "outside",
+          "woman"
+        ],
+        "detectedScenes": [
+          "outdoor"
+        ],
+        "estimatedMood": "neutral"
+      }
+    },
+    {
+      "type": "video",
+      "metadata": {
+        "fileName": "Chocolate5_low.mp4",
+        "filePath": "/content/Chocolate5_low.mp4",
+        "fileSize": 13840650,
+        "createdAt": "2025-06-22 12:48:47 UTC",
+        "description": "a man in a red hat and gray jacket a man standing in front of a restaurant",
+        "tags": [
+          "hat",
+          "front",
+          "restaurant",
+          "in",
+          "outside"
+        ]
+      },
+      "duration": 29.61,
+      "resolution": {
+        "width": 1280,
+        "height": 720
+      },
+      "frameRate": 29.97002997002997,
+      "hasAudio": true,
+      "videoFormat": "mp4",
+      "contentAnalysis": {
+        "contentOverview": "a man in a pink hat and glasses standing outside a restaurant a man in a hat and glasses standing in front of a restaurant a man standing in front of a restaurant a man in a red hat and gray jacket a man in a hat and glasses standing outside of a building",
+        "actionIntroduction": "a man standing in front of a restaurant",
+        "timeBoundDetails": [
+          {
+            "detailStartTime": 0.0,
+            "detailEndTime": 5.92,
+            "detailDescription": "a man standing in front of a restaurant",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 5.92,
+            "detailEndTime": 11.84,
+            "detailDescription": "a man in a red hat and gray jacket",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 11.84,
+            "detailEndTime": 17.77,
+            "detailDescription": "a man in a hat and glasses standing outside of a building",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 17.77,
+            "detailEndTime": 23.69,
+            "detailDescription": "a man in a pink hat and glasses standing outside a restaurant",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 23.69,
+            "detailEndTime": 29.61,
+            "detailDescription": "a man in a hat and glasses standing in front of a restaurant",
+            "detailConfidence": 0.8
+          }
+        ],
+        "detectedObjects": [
+          "hat",
+          "front",
+          "restaurant",
+          "in",
+          "outside"
+        ],
+        "detectedScenes": [
+          "outdoor"
+        ],
+        "estimatedMood": "neutral"
+      }
+    },
+    {
+      "type": "video",
+      "metadata": {
+        "fileName": "Business center_low.mp4",
+        "filePath": "/content/Business center_low.mp4",
+        "fileSize": 18208516,
+        "createdAt": "2025-06-22 12:48:58 UTC",
+        "description": "a street with a sign that says ' no ' a statue of a lion in front of a building",
+        "tags": [
+          "is",
+          "no",
+          "building",
+          "a",
+          "lion"
+        ]
+      },
+      "duration": 23.49,
+      "resolution": {
+        "width": 1280,
+        "height": 720
+      },
+      "frameRate": 29.97002997002997,
+      "hasAudio": true,
+      "videoFormat": "mp4",
+      "contentAnalysis": {
+        "contentOverview": "a street with a sign that says ' no ' a statue of a lion in front of a building a person walking down a sidewalk next to a train a tree with lights on it is in the window a person walking down the sidewalk with lights on",
+        "actionIntroduction": "a street with a sign that says ' no '",
+        "timeBoundDetails": [
+          {
+            "detailStartTime": 0.0,
+            "detailEndTime": 4.7,
+            "detailDescription": "a street with a sign that says ' no '",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 4.7,
+            "detailEndTime": 9.4,
+            "detailDescription": "a statue of a lion in front of a building",
+            "detailConfidence": 0.82
+          },
+          {
+            "detailStartTime": 9.4,
+            "detailEndTime": 14.09,
+            "detailDescription": "a person walking down a sidewalk next to a train",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 14.09,
+            "detailEndTime": 18.79,
+            "detailDescription": "a person walking down the sidewalk with lights on",
+            "detailConfidence": 0.81
+          },
+          {
+            "detailStartTime": 18.79,
+            "detailEndTime": 23.49,
+            "detailDescription": "a tree with lights on it is in the window",
+            "detailConfidence": 0.8
+          }
+        ],
+        "detectedObjects": [
+          "is",
+          "no",
+          "building",
+          "a",
+          "lion"
+        ],
+        "detectedScenes": [
+          "outdoor"
+        ],
+        "estimatedMood": "neutral"
+      }
     }
   ],
   "submittedAt": "2024-01-15 20:00:00 UTC",
@@ -75,7 +373,7 @@
         "maxTokens": 4000
       }
     },
-    "maxVideoDuration": 60.0,
+    "maxVideoDuration": 30.0,
     "preferredStyle": "cinematic",
     "targetAudience": "family and friends",
     "technicalLimits": ["max_segments_5", "transition_duration_2s"],

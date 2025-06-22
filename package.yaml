@@ -64,6 +64,16 @@ executables:
     dependencies:
     - llm-video-editor
 
+  snippets:
+    main:                Snippets.hs
+    source-dirs:         snippets
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - llm-video-editor
+
 tests:
   llm-video-editor-test:
     main:                Spec.hs
