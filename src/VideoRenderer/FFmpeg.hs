@@ -273,29 +273,47 @@ generateFilterComplex segments layout = do
           return ["-filter_complex", filterGraph, "-map", "[outv]", "-map", "[outa]"]
         else do
           -- Multiple segments - need to concatenate
-          let segmentFilters = zipWith (createSegmentFilter width height fps) [0..] segments
-              segmentLabels = concatMap (\i -> printf "[%dv][%da]" (i :: Int) (i :: Int) :: String) [0..numSegments-1]
+          let (segmentFilters, segmentLabels) = unzip $ zipWith (createSegmentFilter width height fps) [0..] segments
+              concatLabels = concat segmentLabels
               concatFilter = printf "%sconcat=n=%d:v=1:a=1[outv][outa]"
-                              (segmentLabels :: String)
+                              (concatLabels :: String)
                               (numSegments :: Int) :: String
               filterGraph = intercalateStr ";" segmentFilters ++ ";" ++ concatFilter
           return ["-filter_complex", filterGraph, "-map", "[outv]", "-map", "[outa]"]
   where    
-    createSegmentFilter :: Int -> Int -> Double -> Int -> VideoSegment -> String  
-    createSegmentFilter w h fps inputIndex seg =
+    createSegmentFilter :: Int -> Int -> Double -> Int -> VideoSegment -> (String, String)
+    createSegmentFilter w h fps segmentIndex seg =
       let Duration startSecs = segmentStart seg
           Duration endSecs = segmentEnd seg
           duration = endSecs - startSecs
+          videoLabel = printf "[v%d]" (segmentIndex :: Int) :: String
+          audioLabel = printf "[a%d]" (segmentIndex :: Int) :: String
+          labels = videoLabel ++ audioLabel
       in case segmentType seg of
            VideoClip _ -> 
-             printf "[%d:v]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1:1,setpts=PTS-STARTPTS[%dv];[%d:a]asetpts=PTS-STARTPTS[%da]"
-               (inputIndex :: Int) (w :: Int) (h :: Int) (w :: Int) (h :: Int) (inputIndex :: Int) (inputIndex :: Int) (inputIndex :: Int) :: String
+             let inputIndex = getVideoInputIndex seg segments
+                 filterStr = printf "[%d:v]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1:1,setpts=PTS-STARTPTS%s;[%d:a]asetpts=PTS-STARTPTS%s"
+                   (inputIndex :: Int) (w :: Int) (h :: Int) (w :: Int) (h :: Int) videoLabel (inputIndex :: Int) audioLabel :: String
+             in (filterStr, labels)
            PhotoClip _ _ ->
-             printf "[%d:v]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1:1,setpts=PTS-STARTPTS[%dv];[%d:a]asetpts=PTS-STARTPTS[%da]"  
-               (inputIndex :: Int) (w :: Int) (h :: Int) (w :: Int) (h :: Int) (inputIndex :: Int) (inputIndex :: Int) (inputIndex :: Int) :: String
+             let inputIndex = getVideoInputIndex seg segments
+                 filterStr = printf "[%d:v]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1:1,setpts=PTS-STARTPTS%s;[%d:a]asetpts=PTS-STARTPTS%s"  
+                   (inputIndex :: Int) (w :: Int) (h :: Int) (w :: Int) (h :: Int) videoLabel (inputIndex :: Int) audioLabel :: String
+             in (filterStr, labels)
            _ -> 
-             printf "color=black:size=%dx%d:duration=%.2f:rate=%.2f[%dv];aevalsrc=0:d=%.2f[%da]"
-               (w :: Int) (h :: Int) (duration :: Double) (fps :: Double) (inputIndex :: Int) (duration :: Double) (inputIndex :: Int) :: String
+             let filterStr = printf "color=black:size=%dx%d:duration=%.2f:rate=%.2f,setpts=PTS-STARTPTS%s;aevalsrc=0:d=%.2f,asetpts=PTS-STARTPTS%s"
+                   (w :: Int) (h :: Int) (duration :: Double) (fps :: Double) videoLabel (duration :: Double) audioLabel :: String
+             in (filterStr, labels)
+    
+    getVideoInputIndex :: VideoSegment -> [VideoSegment] -> Int
+    getVideoInputIndex seg allSegs = 
+      let videoSegs = [s | s <- allSegs, hasMediaReference (segmentType s)]
+          segIndex = length $ takeWhile (\s -> segmentId s /= segmentId seg) videoSegs
+      in segIndex
+      where
+        hasMediaReference (VideoClip _) = True
+        hasMediaReference (PhotoClip _ _) = True
+        hasMediaReference _ = False
 
 -- Helper function for when
 when :: Applicative f => Bool -> f () -> f ()

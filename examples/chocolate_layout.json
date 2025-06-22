@@ -1,0 +1,95 @@
+{
+    "globalAudio": [],
+    "layoutCreatedAt": "2024-01-01T00:00:00Z",
+    "layoutId": "vlog_travel_china_001",
+    "outputFormat": "mp4",
+    "outputFrameRate": 30,
+    "outputResolution": {
+        "height": 1080,
+        "width": 1920
+    },
+    "segments": [
+        {
+            "audioTracks": [],
+            "segmentEnd": 3,
+            "segmentId": "title_card_001",
+            "segmentStart": 0,
+            "segmentType": {
+                "duration": 3,
+                "text": "Exploring the Sweet Side of China",
+                "type": "TitleCard"
+            },
+            "textOverlays": [],
+            "transition": null
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 11.07,
+            "segmentId": "chocolate_taste_001",
+            "segmentStart": 3,
+            "segmentType": {
+                "endTime": 8.07,
+                "mediaId": "Chocolate2_low.mp4",
+                "playbackSpeed": null,
+                "startTime": 0,
+                "type": "VideoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "type": "Cut"
+            }
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 16.07,
+            "segmentId": "chocolate_display_001",
+            "segmentStart": 11.07,
+            "segmentType": {
+                "endTime": 5,
+                "mediaId": "Chocolate3_low.mp4",
+                "playbackSpeed": null,
+                "startTime": 0,
+                "type": "VideoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "type": "Cut"
+            }
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 20.42,
+            "segmentId": "chocolate_reaction_001",
+            "segmentStart": 16.07,
+            "segmentType": {
+                "endTime": 4.35,
+                "mediaId": "Chocolate4_low.mp4",
+                "playbackSpeed": null,
+                "startTime": 0,
+                "type": "VideoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "type": "Cut"
+            }
+        },
+        {
+            "audioTracks": [],
+            "segmentEnd": 30,
+            "segmentId": "city_view_001",
+            "segmentStart": 20.42,
+            "segmentType": {
+                "endTime": 9.58,
+                "mediaId": "Business_center_low.mp4",
+                "playbackSpeed": null,
+                "startTime": 0,
+                "type": "VideoClip"
+            },
+            "textOverlays": [],
+            "transition": {
+                "type": "Cut"
+            }
+        }
+    ],
+    "totalDuration": 30
+}

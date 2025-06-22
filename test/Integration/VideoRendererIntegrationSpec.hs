@@ -11,6 +11,8 @@ import System.FilePath ((</>))
 import System.IO.Temp (createTempDirectory, getCanonicalTemporaryDirectory)
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
+import Data.Aeson (decodeFileStrict)
+import qualified Data.ByteString.Lazy as BL
 
 import Types.Common
 import Types.Video
@@ -71,6 +73,27 @@ spec = describe "VideoRenderer Integration Tests" $ do
         let _config = FFmpeg.defaultFFmpegConfig
         -- If we get here without exception, the config creation works
         True `shouldBe` True
+    
+    it "renders chocolate layout from examples/chocolate_layout.json" $ \ffmpegAvailable -> do
+      when ffmpegAvailable $ do
+        -- Add delay to avoid resource conflicts  
+        threadDelay 300000 -- 300ms delay
+        result <- withTestEnvironment (loadChocolateLayoutFromFile "test/resources/chocolate_layout.json") $ \(tempDir, mediaSources, layout) -> do
+          let outputPath = OutputPath (tempDir </> "chocolate_output.mp4")
+              config = defaultExportConfig mediaSources
+          
+          renderResult <- exportVideo layout config outputPath
+          case renderResult of
+            RenderSuccess outputFile -> do
+              -- Check if output file was created
+              fileExists <- doesFileExist outputFile
+              fileExists `shouldBe` True
+              return True
+            RenderFailure err -> do
+              expectationFailure $ "Chocolate video render failed: " ++ show err
+              return False
+        
+        result `shouldBe` True
 
 -- Helper function to check if FFmpeg is available
 withFFmpegCheck :: (Bool -> IO a) -> IO a
@@ -85,16 +108,16 @@ withTestEnvironment videoLayout action = do
   systemTempDir <- getCanonicalTemporaryDirectory
   testDir <- createTempDirectory systemTempDir "video-renderer-integration"
   
-  let videoDir = testDir </> "video"
-      photoDir = testDir </> "photo"
+  -- Use our test resources for video files
+  let videoDir = "test/resources/video"
+      photoDir = testDir </> "photo" 
       audioDir = testDir </> "audio"
   
-  -- Create source directories
-  createDirectoryIfMissing True videoDir
+  -- Create photo and audio directories (they may be needed)
   createDirectoryIfMissing True photoDir
   createDirectoryIfMissing True audioDir
   
-  -- Create media sources
+  -- Create media sources pointing to our test resources
   let mediaSources = MediaSources videoDir photoDir audioDir
   
   -- Create test layout
@@ -160,3 +183,12 @@ createTestVideoSegment = VideoSegment
   , audioTracks = []
   , transition = Nothing
   }
+
+
+-- Load chocolate layout from JSON file
+loadChocolateLayoutFromFile :: FilePath -> IO VideoLayout
+loadChocolateLayoutFromFile jsonFile = do
+  maybeLayout <- decodeFileStrict jsonFile
+  case maybeLayout of
+    Just layout -> return layout
+    Nothing -> error $ "Failed to parse VideoLayout from " ++ jsonFile
