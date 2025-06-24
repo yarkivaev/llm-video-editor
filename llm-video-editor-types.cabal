@@ -1,0 +1,47 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           llm-video-editor-types
+version:        0.1.0.0
+description:    Shared types for llm-video-editor and llm-video-editor-bot
+homepage:       https://github.com/yarkivaev/llm-video-editor-types#readme
+bug-reports:    https://github.com/yarkivaev/llm-video-editor-types/issues
+author:         Yaroslav
+maintainer:     yarkivaev@gmail.com
+copyright:      2025 Yaroslav
+license:        BSD-3-Clause
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/yarkivaev/llm-video-editor-types
+
+library
+  exposed-modules:
+      Types
+      Types.Common
+      Types.Media
+      Types.Video
+      Types.Assembly
+      Types.System
+  other-modules:
+      Paths_llm_video_editor_types
+  autogen-modules:
+      Paths_llm_video_editor_types
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      aeson
+    , aeson-pretty
+    , base >=4.7 && <5
+    , bytestring
+    , text
+    , time
+  default-language: Haskell2010

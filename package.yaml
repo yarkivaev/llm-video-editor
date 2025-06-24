@@ -1,0 +1,42 @@
+name:                llm-video-editor-types
+version:             0.1.0.0
+github:              "yarkivaev/llm-video-editor-types"
+license:             BSD-3-Clause
+author:              "Yaroslav"
+maintainer:          "yarkivaev@gmail.com"
+copyright:           "2025 Yaroslav"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+description:         Shared types for llm-video-editor and llm-video-editor-bot
+
+dependencies:
+- base >= 4.7 && < 5
+- text
+- time
+- aeson
+- aeson-pretty
+- bytestring
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Types
+    - Types.Common
+    - Types.Media
+    - Types.Video
+    - Types.Assembly
+    - Types.System

@@ -1,0 +1,46 @@
+# Stack
+.stack-work/
+stack.yaml.lock
+
+# Cabal
+dist/
+dist-newstyle/
+cabal-dev/
+.cabal-sandbox/
+cabal.sandbox.config
+cabal.config
+*.cabal#
+
+# Build artifacts
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+dist/
+dist-newstyle/
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated documentation
+*.haddock
+doc/
+
+# Profiling
+*.hp
+*.prof
+*.aux
+
+# Other
+*.eventlog
+.ghc.environment.*

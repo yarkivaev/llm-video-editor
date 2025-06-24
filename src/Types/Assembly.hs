@@ -1,0 +1,81 @@
+{-# LANGUAGE DeriveGeneric #-}
+
+module Types.Assembly
+  ( VideoAssembler (..)
+  , AssemblyContext (..)
+  , AssemblyResult (..)
+  , AssemblyError (..)
+  , AssemblyStrategy (..)
+  , LLMConfig (..)
+  ) where
+
+import Data.Text (Text)
+import GHC.Generics (Generic)
+import Types.Common (Duration (..))
+import Types.Media (VideoRequest)
+import Types.Video (VideoLayout)
+
+-- | Configuration for LLM-based assembly
+data LLMConfig = LLMConfig
+  { modelName       :: Text -- e.g., "gpt-4", "claude-3"
+  , temperature     :: Double -- creativity level (0.0 to 1.0)
+  , maxTokens       :: Maybe Int
+  , systemPrompt    :: Maybe Text
+  , apiEndpoint     :: Maybe Text
+  , apiKey          :: Maybe Text
+  } deriving (Show, Eq, Generic)
+
+-- | Different strategies for video assembly
+data AssemblyStrategy
+  = SingleLLM LLMConfig -- single LLM call
+  | SequentialLLM [LLMConfig] -- sequence of LLM calls
+  | HierarchicalAssembly LLMConfig LLMConfig -- high-level then detailed assembly
+  | EnsembleAssembly [LLMConfig] -- multiple LLMs, merge results
+  | HybridAssembly AssemblyStrategy AssemblyStrategy -- combine strategies
+  deriving (Show, Eq, Generic)
+
+-- | Additional context for video assembly
+data AssemblyContext = AssemblyContext
+  { strategy         :: AssemblyStrategy
+  , maxVideoDuration :: Maybe Duration
+  , preferredStyle   :: Maybe Text
+  , targetAudience   :: Maybe Text
+  , budgetConstraints :: Maybe Text
+  , technicalLimits  :: [Text] -- e.g., ["no_transitions", "max_segments_10"]
+  , customInstructions :: [Text]
+  } deriving (Show, Eq, Generic)
+
+-- | Errors that can occur during assembly
+data AssemblyError
+  = AssemblyLLMError Text -- LLM API or processing error
+  | InvalidPrompt Text -- user prompt issues
+  | AssemblyInsufficientMedia Text -- not enough media for request
+  | TechnicalConstraintViolation Text -- violates technical limits
+  | AssemblyTimeoutError Duration -- assembly took too long
+  | AssemblyParseError Text -- failed to parse LLM output
+  | AssemblyValidationError Text -- generated layout is invalid
+  deriving (Show, Eq, Generic)
+
+-- | Result of video assembly process
+data AssemblyResult
+  = Success VideoLayout
+  | Failure AssemblyError
+  | PartialSuccess VideoLayout [Text] -- layout with warnings
+  deriving (Show, Eq, Generic)
+
+-- | Typeclass for video assembly implementations
+class Monad m => VideoAssembler m where
+  -- | Assemble a video layout from a request
+  assembleVideo :: VideoRequest -> AssemblyContext -> m AssemblyResult
+  
+  -- | Validate a video request before assembly
+  validateRequest :: VideoRequest -> AssemblyContext -> m (Either AssemblyError VideoRequest)
+  validateRequest request _context = pure (Right request) -- default: always valid
+  
+  -- | Estimate assembly time for a request
+  estimateAssemblyTime :: VideoRequest -> AssemblyContext -> m Duration
+  estimateAssemblyTime _request _context = pure (Duration 30.0) -- default: 30 seconds
+  
+  -- | Get capabilities/limits of this assembler
+  getAssemblerCapabilities :: m [Text]
+  getAssemblerCapabilities = pure [] -- default: no specific capabilities listed
