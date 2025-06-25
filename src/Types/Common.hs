@@ -32,12 +32,3 @@ data Location = Location
 -- | Timestamp for media files
 newtype Timestamp = Timestamp UTCTime
   deriving (Show, Eq, Ord, Generic)
-
--- JSON instances
-instance ToJSON Duration
-instance FromJSON Duration
-instance ToJSON Resolution
-instance ToJSON Location
-instance FromJSON Location
-instance ToJSON Timestamp
-instance FromJSON Timestamp

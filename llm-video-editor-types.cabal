@@ -31,6 +31,14 @@ library
       Types.Assembly
       Types.System
   other-modules:
+      Json
+      Json.Assembly
+      Json.Common
+      Json.Media
+      Json.Render
+      Json.System
+      Json.Video
+      Types.Render
       Paths_llm_video_editor_types
   autogen-modules:
       Paths_llm_video_editor_types

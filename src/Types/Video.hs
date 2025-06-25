@@ -10,10 +10,7 @@ module Types.Video
   , MediaReference (..)
   ) where
 
-import Data.Aeson (FromJSON, ToJSON(..), object, (.=), Key)
-import Data.Aeson.Key (fromString)
 import Data.Text (Text)
-import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Types.Common (Duration, Resolution, Timestamp)
 
@@ -83,54 +80,3 @@ data VideoLayout = VideoLayout
   , layoutCreatedAt  :: Timestamp
   } deriving (Show, Eq, Generic)
 
--- JSON instances (ToJSON only, FromJSON instances are in VideoAssembler.LLM to avoid orphan warnings)
-instance ToJSON MediaReference
-instance ToJSON TextOverlay
-instance ToJSON AudioTrack
-instance ToJSON VideoSegment
-instance ToJSON VideoLayout
-
--- Custom ToJSON instances to match the format expected by LLM FromJSON instances
-instance ToJSON SegmentType where
-  toJSON (VideoClip mediaRef) = object
-    [ fromString "type" .= T.pack "VideoClip"
-    , fromString "mediaId" .= mediaId mediaRef
-    , fromString "startTime" .= startTime mediaRef
-    , fromString "endTime" .= endTime mediaRef
-    , fromString "playbackSpeed" .= playbackSpeed mediaRef
-    ]
-  toJSON (PhotoClip mediaRef duration) = object
-    [ fromString "type" .= T.pack "PhotoClip"
-    , fromString "mediaId" .= mediaId mediaRef
-    , fromString "duration" .= duration
-    ]
-  toJSON (TitleCard text duration) = object
-    [ fromString "type" .= T.pack "TitleCard"
-    , fromString "text" .= text
-    , fromString "duration" .= duration
-    ]
-  toJSON (TransitionSegment transition) = object
-    [ fromString "type" .= T.pack "TransitionSegment"
-    , fromString "transition" .= transition
-    ]
-
-instance ToJSON Transition where
-  toJSON Cut = object [fromString "type" .= T.pack "Cut"]
-  toJSON (Fade duration) = object
-    [ fromString "type" .= T.pack "Fade"
-    , fromString "duration" .= duration
-    ]
-  toJSON (Dissolve duration) = object
-    [ fromString "type" .= T.pack "Dissolve"
-    , fromString "duration" .= duration
-    ]
-  toJSON (Wipe wipeType duration) = object
-    [ fromString "type" .= T.pack "Wipe"
-    , fromString "wipeType" .= wipeType
-    , fromString "duration" .= duration
-    ]
-  toJSON (CustomTransition name duration) = object
-    [ fromString "type" .= T.pack "CustomTransition"
-    , fromString "name" .= name
-    , fromString "duration" .= duration
-    ]

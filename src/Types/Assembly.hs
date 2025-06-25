@@ -67,15 +67,3 @@ data AssemblyResult
 class Monad m => VideoAssembler m where
   -- | Assemble a video layout from a request
   assembleVideo :: VideoRequest -> AssemblyContext -> m AssemblyResult
-  
-  -- | Validate a video request before assembly
-  validateRequest :: VideoRequest -> AssemblyContext -> m (Either AssemblyError VideoRequest)
-  validateRequest request _context = pure (Right request) -- default: always valid
-  
-  -- | Estimate assembly time for a request
-  estimateAssemblyTime :: VideoRequest -> AssemblyContext -> m Duration
-  estimateAssemblyTime _request _context = pure (Duration 30.0) -- default: 30 seconds
-  
-  -- | Get capabilities/limits of this assembler
-  getAssemblerCapabilities :: m [Text]
-  getAssemblerCapabilities = pure [] -- default: no specific capabilities listed
