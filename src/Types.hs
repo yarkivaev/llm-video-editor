@@ -10,6 +10,8 @@ module Types
   , module Types.Assembly
     -- * System Types
   , module Types.System
+    -- * Render Types
+  , module Types.Render
   ) where
 
 import Types.Common
@@ -17,3 +19,4 @@ import Types.Media
 import Types.Video
 import Types.Assembly
 import Types.System
+import Types.Render

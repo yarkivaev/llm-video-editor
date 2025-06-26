@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Types.Media
   ( MediaFile (..)
@@ -11,6 +12,7 @@ module Types.Media
   , VideoRequest (..)
   ) where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Common (Duration, Resolution, Location, Timestamp)
@@ -24,7 +26,7 @@ data MediaMetadata = MediaMetadata
   , location     :: Maybe Location
   , description  :: Maybe Text
   , tags         :: [Text]
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Video content analysis from neural network
 data VideoContentAnalysis = VideoContentAnalysis
@@ -34,7 +36,7 @@ data VideoContentAnalysis = VideoContentAnalysis
   , detectedObjects     :: [Text] -- objects detected in video
   , detectedScenes      :: [Text] -- scene types (indoor, outdoor, etc.)
   , estimatedMood       :: Maybe Text -- mood/atmosphere of video
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Time-bound detail for specific moments in video
 data TimeBoundDetail = TimeBoundDetail
@@ -42,7 +44,7 @@ data TimeBoundDetail = TimeBoundDetail
   , detailEndTime   :: Duration
   , detailDescription :: Text
   , detailConfidence :: Maybe Double -- confidence score from 0.0 to 1.0
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Video file with metadata and content analysis
 data VideoFile = VideoFile
@@ -53,7 +55,7 @@ data VideoFile = VideoFile
   , hasAudio      :: Bool
   , videoFormat   :: Text -- e.g., "mp4", "mov", "avi"
   , contentAnalysis :: Maybe VideoContentAnalysis -- analysis from neural network
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Photo file with metadata
 data PhotoFile = PhotoFile
@@ -61,13 +63,13 @@ data PhotoFile = PhotoFile
   , photoResolution :: Resolution
   , imageFormat   :: Text -- e.g., "jpg", "png", "raw"
   , cameraSettings :: Maybe Text
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Union type for all media files
 data MediaFile
   = Video VideoFile
   | Photo PhotoFile
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | User prompt - raw text that goes directly to LLM
 type UserPrompt = Text
@@ -78,4 +80,4 @@ data VideoRequest = VideoRequest
   , mediaFiles   :: [MediaFile]
   , userPrompt   :: UserPrompt
   , submittedAt  :: Timestamp
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)

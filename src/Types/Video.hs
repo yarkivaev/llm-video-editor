@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Types.Video
   ( VideoLayout (..)
@@ -10,6 +11,7 @@ module Types.Video
   , MediaReference (..)
   ) where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Common (Duration, Resolution, Timestamp)
@@ -20,7 +22,7 @@ data MediaReference = MediaReference
   , startTime   :: Duration -- start time within the media
   , endTime     :: Duration -- end time within the media
   , playbackSpeed :: Maybe Double -- 1.0 = normal speed
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Transition between segments
 data Transition
@@ -29,7 +31,7 @@ data Transition
   | Dissolve Duration
   | Wipe Text Duration -- wipe type and duration
   | CustomTransition Text Duration
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Type of video segment
 data SegmentType
@@ -37,7 +39,7 @@ data SegmentType
   | PhotoClip MediaReference Duration -- photo + display duration
   | TitleCard Text Duration
   | TransitionSegment Transition
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Text overlay for segments
 data TextOverlay = TextOverlay
@@ -45,7 +47,7 @@ data TextOverlay = TextOverlay
   , overlayPosition :: (Double, Double) -- x, y coordinates (0-1 normalized)
   , overlayDuration :: Duration
   , overlayStyle    :: Maybe Text
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Audio track information
 data AudioTrack = AudioTrack
@@ -55,7 +57,7 @@ data AudioTrack = AudioTrack
   , volume      :: Double -- 0.0 to 1.0
   , fadeIn      :: Maybe Duration
   , fadeOut     :: Maybe Duration
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Individual video segment in the layout
 data VideoSegment = VideoSegment
@@ -66,7 +68,7 @@ data VideoSegment = VideoSegment
   , textOverlays   :: [TextOverlay]
   , audioTracks    :: [AudioTrack]
   , transition     :: Maybe Transition
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Complete video layout plan
 data VideoLayout = VideoLayout
@@ -78,5 +80,5 @@ data VideoLayout = VideoLayout
   , outputResolution :: Resolution
   , outputFrameRate  :: Double
   , layoutCreatedAt  :: Timestamp
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 

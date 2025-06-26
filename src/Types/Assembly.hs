@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Types.Assembly
   ( VideoAssembler (..)
@@ -9,6 +10,7 @@ module Types.Assembly
   , LLMConfig (..)
   ) where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Common (Duration (..))
@@ -23,7 +25,7 @@ data LLMConfig = LLMConfig
   , systemPrompt    :: Maybe Text
   , apiEndpoint     :: Maybe Text
   , apiKey          :: Maybe Text
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Different strategies for video assembly
 data AssemblyStrategy
@@ -32,7 +34,7 @@ data AssemblyStrategy
   | HierarchicalAssembly LLMConfig LLMConfig -- high-level then detailed assembly
   | EnsembleAssembly [LLMConfig] -- multiple LLMs, merge results
   | HybridAssembly AssemblyStrategy AssemblyStrategy -- combine strategies
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Additional context for video assembly
 data AssemblyContext = AssemblyContext
@@ -43,7 +45,7 @@ data AssemblyContext = AssemblyContext
   , budgetConstraints :: Maybe Text
   , technicalLimits  :: [Text] -- e.g., ["no_transitions", "max_segments_10"]
   , customInstructions :: [Text]
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Errors that can occur during assembly
 data AssemblyError
@@ -54,14 +56,14 @@ data AssemblyError
   | AssemblyTimeoutError Duration -- assembly took too long
   | AssemblyParseError Text -- failed to parse LLM output
   | AssemblyValidationError Text -- generated layout is invalid
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Result of video assembly process
 data AssemblyResult
   = Success VideoLayout
   | Failure AssemblyError
   | PartialSuccess VideoLayout [Text] -- layout with warnings
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- | Typeclass for video assembly implementations
 class Monad m => VideoAssembler m where
