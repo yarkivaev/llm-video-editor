@@ -2,20 +2,20 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 module Types.Assembly
-  ( VideoAssembler (..)
-  , AssemblyContext (..)
+  ( AssemblyContext (..)
   , AssemblyResult (..)
   , AssemblyError (..)
   , AssemblyStrategy (..)
   , LLMConfig (..)
+  , VideoAssembler (..)
   ) where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Common (Duration (..))
-import Types.Media (VideoRequest)
 import Types.Video (VideoLayout)
+import Types.Media
 
 -- | Configuration for LLM-based assembly
 data LLMConfig = LLMConfig
@@ -65,7 +65,6 @@ data AssemblyResult
   | PartialSuccess VideoLayout [Text] -- layout with warnings
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
--- | Typeclass for video assembly implementations
+-- -- | Typeclass for video assembly implementations
 class Monad m => VideoAssembler m where
-  -- | Assemble a video layout from a request
   assembleVideo :: VideoRequest -> AssemblyContext -> m AssemblyResult

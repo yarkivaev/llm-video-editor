@@ -19,6 +19,10 @@ dependencies:
 - aeson
 - aeson-pretty
 - bytestring
+- http-types
+- http-client
+- http-client-tls
+- mtl
 
 ghc-options:
 - -Wall
@@ -40,3 +44,5 @@ library:
     - Types.Video
     - Types.Assembly
     - Types.System
+    - Types.Render
+    - Types.LLM
