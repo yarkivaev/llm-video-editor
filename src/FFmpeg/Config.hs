@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module FFmpeg.Config
-  ( FFmpegConfig
+  ( FFmpegConfig(..)
   ) where
 
 import GHC.Generics (Generic)

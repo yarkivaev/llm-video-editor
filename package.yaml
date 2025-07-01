@@ -23,6 +23,9 @@ dependencies:
 - http-client
 - http-client-tls
 - mtl
+- directory
+- process
+- filepath
 
 ghc-options:
 - -Wall
@@ -45,9 +48,13 @@ library:
     - Types.Assembly
     - Types.System
     - Types.Render
+    - Types.Transcoder
     - Types.LLMApi
     - Types.LLM
     - Action.Assemble
+    - FFmpeg.Config
+    - FFmpeg.Render
+    - FFmpeg.Transcoder
 
 tests:
   llm-video-editor-types-test:

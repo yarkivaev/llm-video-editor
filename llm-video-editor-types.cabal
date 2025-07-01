@@ -31,12 +31,14 @@ library
       Types.Assembly
       Types.System
       Types.Render
+      Types.Transcoder
       Types.LLMApi
       Types.LLM
       Action.Assemble
-  other-modules:
       FFmpeg.Config
       FFmpeg.Render
+      FFmpeg.Transcoder
+  other-modules:
       Paths_llm_video_editor_types
   autogen-modules:
       Paths_llm_video_editor_types
@@ -48,10 +50,13 @@ library
     , aeson-pretty
     , base >=4.7 && <5
     , bytestring
+    , directory
+    , filepath
     , http-client
     , http-client-tls
     , http-types
     , mtl
+    , process
     , text
     , time
   default-language: Haskell2010
@@ -74,12 +79,15 @@ test-suite llm-video-editor-types-integration-test
     , base >=4.7 && <5
     , bytestring
     , case-insensitive
+    , directory
+    , filepath
     , hspec
     , http-client
     , http-client-tls
     , http-types
     , llm-video-editor-types
     , mtl
+    , process
     , text
     , time
   default-language: Haskell2010
@@ -102,12 +110,15 @@ test-suite llm-video-editor-types-test
     , aeson-pretty
     , base >=4.7 && <5
     , bytestring
+    , directory
+    , filepath
     , hspec
     , http-client
     , http-client-tls
     , http-types
     , llm-video-editor-types
     , mtl
+    , process
     , text
     , time
   default-language: Haskell2010
