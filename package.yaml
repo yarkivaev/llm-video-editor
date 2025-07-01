@@ -83,3 +83,7 @@ tests:
     - QuickCheck
     - mtl
     - case-insensitive
+    - temporary
+    - process
+    - time
+    - text
