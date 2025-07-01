@@ -273,11 +273,9 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             (return ())
             (\_ -> do
               exists <- doesFileExist outputFile
-              -- if exists then removeFile outputFile else 
-              return ()
+              if exists then removeFile outputFile else return ()
               )
             (\_ -> do
-              putStrLn $ "Executing FFmpeg command: " ++ unwords (commandBinary command : commandArgs command)
               (exitCode, stdout, stderr) <- readProcessWithExitCode 
                 (commandBinary command) 
                 (commandArgs command)
@@ -312,6 +310,111 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
                 else putStrLn $ "ffprobe failed: " ++ probeStderr
               )
           -- Expected duration: 6.0 seconds (two 3-second segments)
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+
+    it "handles multi-segment layout with different video resolutions" $ do
+      now <- getCurrentTime
+      let layout = VideoLayout
+            { layoutId = "multi-resolution-test"
+            , totalDuration = Duration 5.0
+            , segments = [ VideoSegment
+                { segmentId = "480p-segment"
+                , segmentType = VideoClip $ MediaReference
+                    { mediaId = "test-video-1.mp4"  -- 640x480
+                    , startTime = Duration 0.0
+                    , endTime = Duration 2.5
+                    , playbackSpeed = Just 1.0
+                    }
+                , segmentStart = Duration 0.0
+                , segmentEnd = Duration 2.5
+                , textOverlays = []
+                , audioTracks = []
+                , transition = Nothing
+                }
+                , VideoSegment
+                { segmentId = "720p-segment"
+                , segmentType = VideoClip $ MediaReference
+                    { mediaId = "test-video-720p-audio.mp4"  -- 1280x720
+                    , startTime = Duration 0.0
+                    , endTime = Duration 2.5
+                    , playbackSpeed = Just 1.0
+                    }
+                , segmentStart = Duration 2.5
+                , segmentEnd = Duration 5.0
+                , textOverlays = []
+                , audioTracks = []
+                , transition = Nothing
+                }
+                ]
+            , globalAudio = []
+            , outputFormat = "mp4"
+            , outputResolution = Resolution 1920 1080
+            , outputFrameRate = 30.0
+            , layoutCreatedAt = Timestamp now
+            }
+      result <- createTranscodeRequest layout "./multi-resolution.mp4" Nothing
+      
+      case result of
+        TranscodeSuccess command -> do
+          let args = commandArgs command
+          -- Should have input files for each segment
+          length (filter (== "-i") args) `shouldBe` 2
+          -- Should have filter complex for concatenation and scaling
+          args `shouldContain` ["-filter_complex"]
+          
+          -- Execute the actual FFmpeg command and validate duration
+          let outputFile = "./multi-resolution.mp4"
+          bracket
+            (return ())
+            (\_ -> do
+              exists <- doesFileExist outputFile
+              if exists then removeFile outputFile else return ()
+              )
+            (\_ -> do
+              (exitCode, stdout, stderr) <- readProcessWithExitCode 
+                (commandBinary command) 
+                (commandArgs command)
+                ""
+              
+              -- Debug output on failure
+              if exitCode /= ExitSuccess then do
+                putStrLn $ "FFmpeg failed with exit code: " ++ show exitCode
+                putStrLn $ "FFmpeg stderr: " ++ stderr
+                putStrLn $ "FFmpeg stdout: " ++ stdout
+              else return ()
+              
+              -- Command should complete successfully
+              exitCode `shouldBe` ExitSuccess
+              
+              -- Output file should be created
+              outputExists <- doesFileExist outputFile
+              outputExists `shouldBe` True
+              
+              -- Check video duration using ffprobe
+              (probeExitCode, probeDuration, probeStderr) <- readProcessWithExitCode 
+                "ffprobe" 
+                ["-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", outputFile] 
+                ""
+              
+              if probeExitCode == ExitSuccess 
+                then do
+                  let actualDuration = read probeDuration :: Double
+                  -- Allow tolerance for multi-resolution encoding precision (±0.2 seconds)
+                  abs (actualDuration - 5.0) `shouldSatisfy` (<= 0.2)
+                else putStrLn $ "ffprobe failed: " ++ probeStderr
+              
+              -- Verify output resolution matches expected layout resolution
+              (resExitCode, resOutput, resStderr) <- readProcessWithExitCode 
+                "ffprobe" 
+                ["-v", "quiet", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", outputFile] 
+                ""
+              
+              if resExitCode == ExitSuccess 
+                then do
+                  resOutput `shouldBe` "1920x1080\n"
+                else putStrLn $ "ffprobe resolution check failed: " ++ resStderr
+              )
+          -- Expected duration: 5.0 seconds (two 2.5-second segments from different resolutions)
         TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
 
   describe "configuration variations" $ do

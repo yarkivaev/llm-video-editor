@@ -94,8 +94,8 @@ resolvePhotoPath sources mediaRef = photoSourceDir sources </> T.unpack (mediaId
 -- | Generate filter string for concatenating multiple segments
 generateFilterString :: Int -> String
 generateFilterString segCount = 
-  let -- Scale all video inputs to consistent resolution
-      videoFilters = map (\i -> "[" ++ show i ++ ":v]scale=1920:1080[v" ++ show i ++ "]") [0..segCount-1]
+  let -- Scale all video inputs to consistent resolution and SAR
+      videoFilters = map (\i -> "[" ++ show i ++ ":v]scale=1920:1080,setsar=1[v" ++ show i ++ "]") [0..segCount-1]
       -- Prepare audio inputs (use silent audio if no audio stream)
       audioFilters = map (\i -> "[" ++ show i ++ ":a]aresample=48000[a" ++ show i ++ "]") [0..segCount-1]
       -- All individual filters separated by semicolons
