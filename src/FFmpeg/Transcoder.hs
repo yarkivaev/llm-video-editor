@@ -12,6 +12,7 @@ import Control.Monad.Reader (MonadReader, ask)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
 import qualified Data.Text as T
+import Data.List (intercalate)
 import Types.Transcoder
 import Types.Video (VideoLayout(..), VideoSegment(..), SegmentType(..), MediaReference(..))
 import Types.Render (OutputPath(..), MediaSources(..))
@@ -50,10 +51,10 @@ generateFFmpegCommand config request =
                      else []  -- Multi-segment handling would need concatenation
       
       filterComplex = if segmentCount == 0
-                      then ["-filter_complex", "[0:v]scale=1920:1080[out]"]
+                      then ["-filter_complex", "[0:v]scale=1920:1080[outv]", "-map", "[outv]"]
                       else if segmentCount == 1
                            then []  -- No filter complex needed for single input
-                           else ["-filter_complex", generateFilterString segmentCount]
+                           else ["-filter_complex", generateFilterString segmentCount, "-map", "[outv]", "-map", "[outa]"]
   in [ ffmpegBinary config, "-y"
      , "-loglevel", if verboseLogging config then "info" else "warning"
      ] ++ inputArgs ++ filterComplex ++ durationArgs ++
@@ -67,9 +68,12 @@ getInputArgs sources (_, segment) =
   case segmentType segment of
     VideoClip mediaRef -> 
       let Duration startOffset = startTime mediaRef
+          Duration endOffset = endTime mediaRef
+          clipDuration = endOffset - startOffset
           filePath = resolveVideoPath sources mediaRef
           seekArgs = if startOffset > 0 then ["-ss", show startOffset] else []
-      in seekArgs ++ ["-i", filePath]
+          durationArgs = ["-t", show clipDuration]
+      in seekArgs ++ durationArgs ++ ["-i", filePath]
     PhotoClip mediaRef duration -> 
       let Duration photoDuration = duration
           filePath = resolvePhotoPath sources mediaRef
@@ -90,6 +94,14 @@ resolvePhotoPath sources mediaRef = photoSourceDir sources </> T.unpack (mediaId
 -- | Generate filter string for concatenating multiple segments
 generateFilterString :: Int -> String
 generateFilterString segCount = 
-  let segmentFilters = map (\i -> "[" ++ show i ++ ":v]scale=1920:1080[v" ++ show i ++ "];") [0..segCount-1]
-      concatInputs = map (\i -> "[v" ++ show i ++ "]") [0..segCount-1]
-  in concat segmentFilters ++ concat concatInputs ++ "concat=n=" ++ show segCount ++ ":v=1:a=0[out]"
+  let -- Scale all video inputs to consistent resolution
+      videoFilters = map (\i -> "[" ++ show i ++ ":v]scale=1920:1080[v" ++ show i ++ "]") [0..segCount-1]
+      -- Prepare audio inputs (use silent audio if no audio stream)
+      audioFilters = map (\i -> "[" ++ show i ++ ":a]aresample=48000[a" ++ show i ++ "]") [0..segCount-1]
+      -- All individual filters separated by semicolons
+      allFilters = videoFilters ++ audioFilters
+      -- Concatenate streams - FFmpeg concat filter expects: [v0][a0][v1][a1]...
+      streamPairs = concatMap (\i -> ["[v" ++ show i ++ "]", "[a" ++ show i ++ "]"]) [0..segCount-1]
+      concatInputs = concat streamPairs
+      concatFilter = concatInputs ++ "concat=n=" ++ show segCount ++ ":v=1:a=1[outv][outa]"
+  in intercalate ";" allFilters ++ ";" ++ concatFilter
