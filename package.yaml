@@ -45,4 +45,34 @@ library:
     - Types.Assembly
     - Types.System
     - Types.Render
+    - Types.LLMApi
     - Types.LLM
+    - Action.Assemble
+
+tests:
+  llm-video-editor-types-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - llm-video-editor-types
+    - hspec
+    - QuickCheck
+    - mtl
+
+  llm-video-editor-types-integration-test:
+    main:                Spec.hs
+    source-dirs:         integration-test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - llm-video-editor-types
+    - hspec
+    - QuickCheck
+    - mtl
+    - case-insensitive

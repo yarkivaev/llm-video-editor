@@ -31,12 +31,12 @@ library
       Types.Assembly
       Types.System
       Types.Render
+      Types.LLMApi
       Types.LLM
-  other-modules:
       Action.Assemble
+  other-modules:
       FFmpeg.Config
       FFmpeg.Render
-      Types.ChatGpt
       Paths_llm_video_editor_types
   autogen-modules:
       Paths_llm_video_editor_types
@@ -51,6 +51,62 @@ library
     , http-client
     , http-client-tls
     , http-types
+    , mtl
+    , text
+    , time
+  default-language: Haskell2010
+
+test-suite llm-video-editor-types-integration-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Types.LLMIntegrationSpec
+      Paths_llm_video_editor_types
+  autogen-modules:
+      Paths_llm_video_editor_types
+  hs-source-dirs:
+      integration-test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , base >=4.7 && <5
+    , bytestring
+    , case-insensitive
+    , hspec
+    , http-client
+    , http-client-tls
+    , http-types
+    , llm-video-editor-types
+    , mtl
+    , text
+    , time
+  default-language: Haskell2010
+
+test-suite llm-video-editor-types-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Action.AssembleSpec
+      Types.AssemblySpec
+      Paths_llm_video_editor_types
+  autogen-modules:
+      Paths_llm_video_editor_types
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , base >=4.7 && <5
+    , bytestring
+    , hspec
+    , http-client
+    , http-client-tls
+    , http-types
+    , llm-video-editor-types
     , mtl
     , text
     , time

@@ -12,8 +12,8 @@ module Types
   , module Types.System
     -- * Render Types
   , module Types.Render
-    -- * LLM Types
-  , module Types.LLM
+    -- * LLMApi Types
+  , module Types.LLMApi
   ) where
 
 import Types.Common
@@ -22,4 +22,4 @@ import Types.Video
 import Types.Assembly
 import Types.System
 import Types.Render
-import Types.LLM
+import Types.LLMApi

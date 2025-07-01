@@ -17,7 +17,7 @@ import Types.Common (Duration (..))
 import Types.Video (VideoLayout)
 import Types.Media
 
--- | Configuration for LLM-based assembly
+-- | Configuration for LLMApi-based assembly
 data LLMConfig = LLMConfig
   { modelName       :: Text -- e.g., "gpt-4", "claude-3"
   , temperature     :: Double -- creativity level (0.0 to 1.0)
@@ -29,8 +29,8 @@ data LLMConfig = LLMConfig
 
 -- | Different strategies for video assembly
 data AssemblyStrategy
-  = SingleLLM LLMConfig -- single LLM call
-  | SequentialLLM [LLMConfig] -- sequence of LLM calls
+  = SingleLLM LLMConfig -- single LLMApi call
+  | SequentialLLM [LLMConfig] -- sequence of LLMApi calls
   | HierarchicalAssembly LLMConfig LLMConfig -- high-level then detailed assembly
   | EnsembleAssembly [LLMConfig] -- multiple LLMs, merge results
   | HybridAssembly AssemblyStrategy AssemblyStrategy -- combine strategies
@@ -49,12 +49,12 @@ data AssemblyContext = AssemblyContext
 
 -- | Errors that can occur during assembly
 data AssemblyError
-  = AssemblyLLMError Text -- LLM API or processing error
+  = AssemblyLLMError Text -- LLMApi API or processing error
   | InvalidPrompt Text -- user prompt issues
   | AssemblyInsufficientMedia Text -- not enough media for request
   | TechnicalConstraintViolation Text -- violates technical limits
   | AssemblyTimeoutError Duration -- assembly took too long
-  | AssemblyParseError Text -- failed to parse LLM output
+  | AssemblyParseError Text -- failed to parse LLMApi output
   | AssemblyValidationError Text -- generated layout is invalid
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
@@ -65,6 +65,6 @@ data AssemblyResult
   | PartialSuccess VideoLayout [Text] -- layout with warnings
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
--- -- | Typeclass for video assembly implementations
+-- | Typeclass for video assembly implementations
 class Monad m => VideoAssembler m where
   assembleVideo :: VideoRequest -> AssemblyContext -> m AssemblyResult

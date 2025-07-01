@@ -71,7 +71,7 @@ data MediaFile
   | Photo PhotoFile
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
--- | User prompt - raw text that goes directly to LLM
+-- | User prompt - raw text that goes directly to LLMApi
 type UserPrompt = Text
 
 -- | Complete video creation request

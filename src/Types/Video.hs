@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Types.Video
   ( VideoLayout (..)
@@ -11,10 +12,10 @@ module Types.Video
   , MediaReference (..)
   ) where
 
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON(..), ToJSON(..), object, (.=), (.:), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Types.Common (Duration, Resolution, Timestamp)
+import Types.Common (Duration(..), Resolution, Timestamp)
 
 -- | Reference to a media file within a segment
 data MediaReference = MediaReference
@@ -31,7 +32,7 @@ data Transition
   | Dissolve Duration
   | Wipe Text Duration -- wipe type and duration
   | CustomTransition Text Duration
-  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  deriving (Show, Eq, Generic)
 
 -- | Type of video segment
 data SegmentType
@@ -39,7 +40,7 @@ data SegmentType
   | PhotoClip MediaReference Duration -- photo + display duration
   | TitleCard Text Duration
   | TransitionSegment Transition
-  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  deriving (Show, Eq, Generic)
 
 -- | Text overlay for segments
 data TextOverlay = TextOverlay
@@ -81,4 +82,69 @@ data VideoLayout = VideoLayout
   , outputFrameRate  :: Double
   , layoutCreatedAt  :: Timestamp
   } deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+-- Custom JSON instances to handle flat structure with "type" field
+instance ToJSON Transition where
+  toJSON Cut = object ["type" .= ("Cut" :: Text)]
+  toJSON (Fade duration) = object ["type" .= ("Fade" :: Text), "duration" .= duration]
+  toJSON (Dissolve duration) = object ["type" .= ("Dissolve" :: Text), "duration" .= duration]
+  toJSON (Wipe wipeType duration) = object ["type" .= ("Wipe" :: Text), "wipeType" .= wipeType, "duration" .= duration]
+  toJSON (CustomTransition name duration) = object ["type" .= ("CustomTransition" :: Text), "name" .= name, "duration" .= duration]
+
+instance FromJSON Transition where
+  parseJSON = withObject "Transition" $ \o -> do
+    t <- o .: "type"
+    case (t :: Text) of
+      "Cut" -> return Cut
+      "Fade" -> Fade <$> o .: "duration"
+      "Dissolve" -> Dissolve <$> o .: "duration" 
+      "Wipe" -> Wipe <$> o .: "wipeType" <*> o .: "duration"
+      "CustomTransition" -> CustomTransition <$> o .: "name" <*> o .: "duration"
+      _ -> fail $ "Unknown transition type: " ++ show t
+
+instance ToJSON SegmentType where
+  toJSON (VideoClip ref) = object 
+    [ "type" .= ("VideoClip" :: Text)
+    , "mediaId" .= mediaId ref
+    , "startTime" .= startTime ref
+    , "endTime" .= endTime ref
+    , "playbackSpeed" .= playbackSpeed ref
+    ]
+  toJSON (PhotoClip ref duration) = object
+    [ "type" .= ("PhotoClip" :: Text)
+    , "mediaId" .= mediaId ref
+    , "duration" .= duration
+    ]
+  toJSON (TitleCard text duration) = object
+    [ "type" .= ("TitleCard" :: Text)
+    , "text" .= text
+    , "duration" .= duration
+    ]
+  toJSON (TransitionSegment transition) = object
+    [ "type" .= ("TransitionSegment" :: Text)
+    , "transition" .= transition
+    ]
+
+instance FromJSON SegmentType where
+  parseJSON = withObject "SegmentType" $ \o -> do
+    t <- o .: "type"
+    case (t :: Text) of
+      "VideoClip" -> do
+        mediaRef <- MediaReference 
+          <$> o .: "mediaId"
+          <*> o .: "startTime"
+          <*> o .: "endTime"
+          <*> o .: "playbackSpeed"
+        return $ VideoClip mediaRef
+      "PhotoClip" -> do
+        mediaRef <- MediaReference
+          <$> o .: "mediaId"
+          <*> pure (Duration 0) -- PhotoClip doesn't use startTime/endTime from MediaReference
+          <*> pure (Duration 0)
+          <*> pure Nothing
+        duration <- o .: "duration"
+        return $ PhotoClip mediaRef duration
+      "TitleCard" -> TitleCard <$> o .: "text" <*> o .: "duration"
+      "TransitionSegment" -> TransitionSegment <$> o .: "transition"
+      _ -> fail $ "Unknown segment type: " ++ show t
 

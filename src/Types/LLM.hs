@@ -1,235 +1,78 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Types.LLM
-  ( -- * Core Types
-    Prompt(..)
-  , LLM(..)
-  , prompt
-  -- * API Types
-  , LLMRequest(..)
-  , LLMMessage(..)
-  , LLMResponse(..)
-  , LLMChoice(..)
-  , RawVideoLayout(..)
-  -- * Utility Functions
-  , extractJsonFromMarkdown
-  , parseResponse
-  , addTimestampToLayout
-  , formatMediaFiles
-  , formatMediaFileReferences
-  , formatConstraints
+  ( LLM(..)
   ) where
 
 import Data.Aeson
-import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Data.Time (parseTimeOrError, defaultTimeLocale)
-import GHC.Generics (Generic)
-import Types.Assembly (AssemblyResult(..), AssemblyError(..))
-import Types.Video (VideoLayout(..), VideoSegment, AudioTrack)
-import Types.Common (Duration(..), Resolution, Timestamp(..))
-import qualified Types.Assembly as Assembly
-import Types.Assembly (AssemblyContext(..))
-import Types.Media (VideoRequest(..), MediaFile(..), VideoFile(..), PhotoFile(..), MediaMetadata(..), VideoContentAnalysis(..), fileName)
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS (tlsManagerSettings)
+import Network.HTTP.Types.Status (statusCode)
+import System.Environment (lookupEnv)
+import Control.Exception (try, SomeException)
+import Types.Assembly
+import Types.LLMApi
 
-newtype Prompt = Prompt Text
-  deriving (Show, Eq, Generic, FromJSON, ToJSON) 
+-- | ChatGPT implementation
+data LLM = ChatGpt
+  deriving (Show, Eq)
 
-class LLM a where
-  call :: a -> Prompt -> IO AssemblyResult
-
--- | LLM API request structure
-data LLMRequest = LLMRequest
-  { llmMessages :: [LLMMessage]
-  , llmModel :: Text
-  , llmTemperature :: Double
-  , llmMaxTokens :: Maybe Int
-  } deriving (Show, Eq, Generic)
-
-data LLMMessage = LLMMessage
-  { role :: Text
-  , content :: Text
-  } deriving (Show, Eq, Generic)
-
--- | LLM API response structure
-data LLMResponse = LLMResponse
-  { choices :: [LLMChoice]
-  } deriving (Show, Eq, Generic)
-
-data LLMChoice = LLMChoice
-  { message :: LLMMessage
-  } deriving (Show, Eq, Generic)
-
--- | Raw video layout from LLM response (without timestamp)
-data RawVideoLayout = RawVideoLayout
-  { rawLayoutId :: Text
-  , rawTotalDuration :: Duration
-  , rawSegments :: [VideoSegment]
-  , rawGlobalAudio :: [AudioTrack]
-  , rawOutputFormat :: Text
-  , rawOutputResolution :: Resolution
-  , rawOutputFrameRate :: Double
-  } deriving (Show, Eq, Generic)
-
--- JSON instances
-instance ToJSON LLMRequest where
-  toJSON = genericToJSON defaultOptions { fieldLabelModifier = \name -> 
-    case name of
-      "llmMessages" -> "messages"
-      "llmModel" -> "model"
-      "llmTemperature" -> "temperature"
-      "llmMaxTokens" -> "max_tokens"
-      _ -> drop 3 name
-  }
-
-instance ToJSON LLMMessage where
-  toJSON = genericToJSON defaultOptions
-
-instance FromJSON LLMResponse where
-  parseJSON = genericParseJSON defaultOptions
-
-instance FromJSON LLMChoice where
-  parseJSON = genericParseJSON defaultOptions
-
-instance FromJSON LLMMessage where
-  parseJSON = genericParseJSON defaultOptions
-
-instance FromJSON RawVideoLayout where
-  parseJSON = withObject "RawVideoLayout" $ \o -> RawVideoLayout
-    <$> o .: "layoutId"
-    <*> (Duration <$> o .: "totalDuration")
-    <*> o .: "segments"
-    <*> o .: "globalAudio"
-    <*> o .: "outputFormat"
-    <*> o .: "outputResolution"
-    <*> o .: "outputFrameRate"
-
--- | Extract JSON from markdown code blocks
-extractJsonFromMarkdown :: Text -> Text
-extractJsonFromMarkdown responseText = 
-  let cleanText = T.strip responseText
-  in if T.isPrefixOf "```json" cleanText
-     then 
-       let withoutPrefix = T.drop 7 cleanText -- Remove "```json"
-           lines' = T.lines withoutPrefix
-           jsonLines = takeWhile (not . T.isPrefixOf "```") lines'
-       in T.unlines jsonLines
-     else if T.isPrefixOf "```" cleanText
-     then 
-       let withoutPrefix = T.drop 3 cleanText -- Remove "```"
-           lines' = T.lines withoutPrefix
-           jsonLines = takeWhile (not . T.isPrefixOf "```") lines'
-       in T.unlines jsonLines
-     else responseText
-
--- | Parse LLM response from text content into AssemblyResult
-parseResponse :: Text -> AssemblyResult
-parseResponse responseText =
-  let cleanedJson = extractJsonFromMarkdown responseText
-  in case eitherDecodeStrict' (TE.encodeUtf8 cleanedJson) of
-    Left err -> Failure (AssemblyParseError $ T.pack $ "Failed to parse JSON: " ++ err ++ ". Cleaned text: " ++ show cleanedJson)
-    Right rawLayout -> 
-      -- Add current timestamp to the layout
-      case addTimestampToLayout rawLayout of
-        Left err -> Failure (AssemblyParseError err)
-        Right layout -> Assembly.Success layout
-
--- | Add current timestamp to parsed layout
-addTimestampToLayout :: RawVideoLayout -> Either Text VideoLayout
-addTimestampToLayout raw = Right $ VideoLayout
-  { layoutId = rawLayoutId raw
-  , totalDuration = rawTotalDuration raw
-  , segments = rawSegments raw
-  , globalAudio = rawGlobalAudio raw
-  , outputFormat = rawOutputFormat raw
-  , outputResolution = rawOutputResolution raw
-  , outputFrameRate = rawOutputFrameRate raw
-  , layoutCreatedAt = Timestamp $ parseTimeOrError False defaultTimeLocale "%Y-%m-%d %H:%M:%S %Z" "2024-01-01 00:00:00 UTC"
-  }
-
--- | Typeclass for generating prompts from requests and contexts
-prompt :: VideoRequest -> AssemblyContext -> Prompt
-prompt request context = Prompt $ T.unlines
-  [ "You are a professional video editor AI. Create a detailed video layout from the provided media files and user request."
-  , ""
-  , "## User Request:"
-  , userPrompt request
-  , ""
-  , "## Available Media Files:"
-  , formatMediaFiles (mediaFiles request)
-  , ""
-  , "## Technical Constraints:"
-  , formatConstraints context
-  , ""
-  , "## CRITICAL: JSON Schema Requirements"
-  , "You MUST respond with EXACTLY this JSON structure. Do NOT use markdown formatting, code blocks, or any other text."
-  , "Return ONLY valid JSON that matches this schema:"
-  , ""
-  , "{"
-  , "  \"layoutId\": \"string - unique identifier\","
-  , "  \"totalDuration\": \"number - total video duration in seconds\","
-  , "  \"segments\": ["
-  , "    {"
-  , "      \"segmentId\": \"string\","
-  , "      \"segmentType\": {"
-  , "        \"type\": \"TitleCard|VideoClip|PhotoClip|Transition\","
-  , "        \"text\": \"string (for TitleCard)\","
-  , "        \"duration\": \"number\""
-  , "      },"
-  , "      \"segmentStart\": \"number - start time in seconds\","
-  , "      \"segmentEnd\": \"number - end time in seconds\","
-  , "      \"textOverlays\": [],"
-  , "      \"audioTracks\": [],"
-  , "      \"transition\": null"
-  , "    }"
-  , "  ],"
-  , "  \"globalAudio\": [],"
-  , "  \"outputFormat\": \"mp4\","
-  , "  \"outputResolution\": {\"width\": 1920, \"height\": 1080},"
-  , "  \"outputFrameRate\": 30.0"
-  , "}"
-  , ""
-  , "## Media File References:"
-  , formatMediaFileReferences (mediaFiles request)
-  , ""
-  , "Return ONLY the JSON object. No explanation, no markdown, no code blocks."
-  ]
-
--- | Format media files for prompt
-formatMediaFiles :: [MediaFile] -> Text
-formatMediaFiles files = T.unlines $ map formatMediaFile files
-  where
-    formatMediaFile (Video vf) = T.concat
-      [ "- Video: ", fileName (videoMetadata vf)
-      , " (", T.pack $ show (videoDuration vf), "s)"
-      , case contentAnalysis vf of
-          Just analysis -> " - " <> contentOverview analysis
-          Nothing -> ""
-      ]
-    formatMediaFile (Photo pf) = T.concat
-      [ "- Photo: ", fileName (photoMetadata pf)
-      , " (", T.pack $ show (photoResolution pf), ")"
-      ]
-
--- | Format media file references for JSON schema
-formatMediaFileReferences :: [MediaFile] -> Text
-formatMediaFileReferences files = T.unlines $ map formatMediaReference files
-  where
-    formatMediaReference (Video vf) = T.concat
-      [ "- Use mediaId: \"", fileName (videoMetadata vf), "\" for video clips"
-      ]
-    formatMediaReference (Photo pf) = T.concat
-      [ "- Use mediaId: \"", fileName (photoMetadata pf), "\" for photo clips"
-      ]
-
--- | Format assembly constraints for prompt
-formatConstraints :: AssemblyContext -> Text
-formatConstraints context = T.unlines $
-  [ "- Max duration: " <> maybe "unlimited" (T.pack . show) (maxVideoDuration context)
-  , "- Preferred style: " <> maybe "any" id (preferredStyle context)
-  , "- Target audience: " <> maybe "general" id (targetAudience context)
-  ] ++ map ("- " <>) (technicalLimits context)
-    ++ map ("- Custom: " <>) (customInstructions context)
+-- | LLMApi instance for ChatGPT
+instance LLMApi LLM where
+  call ChatGpt (Prompt promptText) = do
+    -- Get API key from environment
+    maybeApiKey <- fmap T.pack <$> lookupEnv "OPENAI_API_KEY"
+    
+    case maybeApiKey of
+      Nothing -> return $ Failure (AssemblyLLMError "No OpenAI API key provided. Set OPENAI_API_KEY environment variable.")
+      Just apiKeyValue -> do
+        -- Create manager with timeout and connection settings
+        let managerSettings = tlsManagerSettings
+              { managerConnCount = 1
+              , managerResponseTimeout = responseTimeoutMicro (120 * 1000000) -- 120 seconds
+              }
+        manager <- newManager managerSettings
+        
+        let llmRequest = LLMRequest
+              { llmMessages = [LLMMessage "user" promptText]
+              , llmModel = "gpt-3.5-turbo" -- More reliable than gpt-4
+              , llmTemperature = 0.7
+              , llmMaxTokens = Nothing -- No response limit
+              }
+        
+        let body = encode llmRequest
+        let url = "https://api.openai.com/v1/chat/completions"
+        
+        -- Wrap HTTP call in exception handling
+        result <- try $ do
+          initialRequest <- parseRequest url
+          let request = initialRequest
+                { method = "POST"
+                , requestHeaders = 
+                    [ ("Content-Type", "application/json")
+                    , ("Authorization", "Bearer " <> TE.encodeUtf8 apiKeyValue)
+                    , ("User-Agent", "llm-video-editor/1.0")
+                    ]
+                , requestBody = RequestBodyLBS body
+                }
+          
+          response <- httpLbs request manager
+          let statusCode' = statusCode $ responseStatus response
+          let responseBodyData = responseBody response
+          
+          if statusCode' == 200
+            then case eitherDecode responseBodyData of
+              Left err -> return $ Failure (AssemblyLLMError $ T.pack $ "Failed to parse ChatGPT response: " ++ err)
+              Right llmResponse -> do
+                let extractedContent = case choices llmResponse of
+                      [] -> ""
+                      (choice:_) -> content $ message choice
+                return $ parseResponse extractedContent
+            else return $ Failure (AssemblyLLMError $ T.pack $ "ChatGPT API error. Status code: " ++ show statusCode' ++ ". Response: " ++ T.unpack (T.take 500 (T.pack $ show responseBodyData)))
+        
+        case result of
+          Left (ex :: SomeException) -> return $ Failure (AssemblyLLMError $ T.pack $ "Network error connecting to OpenAI API: " ++ show ex)
+          Right assemblyResult -> return assemblyResult
