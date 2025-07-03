@@ -1,6 +1,6 @@
-name:                llm-video-editor-types
+name:                llm-video-editor
 version:             0.1.0.0
-github:              "yarkivaev/llm-video-editor-types"
+github:              "yarkivaev/llm-video-editor"
 license:             BSD-3-Clause
 author:              "Yaroslav"
 maintainer:          "yarkivaev@gmail.com"
@@ -10,7 +10,7 @@ extra-source-files:
 - README.md
 - CHANGELOG.md
 
-description:         Shared types for llm-video-editor and llm-video-editor-bot
+description:         Core library for llm-video-editor
 
 dependencies:
 - base >= 4.7 && < 5
@@ -60,7 +60,7 @@ library:
     - SemanticVideoAnalysis.Adapter
 
 tests:
-  llm-video-editor-types-test:
+  llm-video-editor-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -68,12 +68,12 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - llm-video-editor-types
+    - llm-video-editor
     - hspec
     - QuickCheck
     - mtl
 
-  llm-video-editor-types-integration-test:
+  llm-video-editor-integration-test:
     main:                Spec.hs
     source-dirs:         integration-test
     ghc-options:
@@ -81,7 +81,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - llm-video-editor-types
+    - llm-video-editor
     - hspec
     - QuickCheck
     - mtl
