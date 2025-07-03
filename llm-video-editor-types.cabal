@@ -70,7 +70,9 @@ test-suite llm-video-editor-types-integration-test
   other-modules:
       FFmpeg.TranscoderIntegrationSpec
       SemanticVideoAnalysis.SemanticVideoAnalysisIntegrationSpec
+      TestInstances
       Types.LLMIntegrationSpec
+      Types.VideoEditorIntegrationSpec
       Paths_llm_video_editor_types
   autogen-modules:
       Paths_llm_video_editor_types

@@ -19,8 +19,9 @@ import Types.Transcoder
 import FFmpeg.Config (FFmpegConfig(..))
 import FFmpeg.Transcoder ()
 import File
+import FileSystem
 
-instance (Monad m, MonadIO m, MonadReader FFmpegConfig m) => VideoRenderer m where
+instance (Monad m, MonadIO m, MonadReader FFmpegConfig m, MonadFileShow m) => VideoRenderer m where
   renderVideo layout context = do
     let request = TranscodeRequest
           { transcodeLayout = layout

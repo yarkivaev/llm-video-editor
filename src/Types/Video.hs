@@ -12,7 +12,7 @@ module Types.Video
   , MediaReference (..)
   ) where
 
-import Data.Aeson (FromJSON(..), ToJSON(..), object, (.=), (.:), withObject)
+import Data.Aeson (FromJSON(..), ToJSON(..), object, (.=), (.:), (.:?), (.!=), withObject)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Common (Duration(..), Resolution, Timestamp)
@@ -69,7 +69,7 @@ data VideoSegment = VideoSegment
   , textOverlays   :: [TextOverlay]
   , audioTracks    :: [AudioTrack]
   , transition     :: Maybe Transition
-  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  } deriving (Show, Eq, Generic, ToJSON)
 
 -- | Complete video layout plan
 data VideoLayout = VideoLayout
@@ -147,4 +147,16 @@ instance FromJSON SegmentType where
       "TitleCard" -> TitleCard <$> o .: "text" <*> o .: "duration"
       "TransitionSegment" -> TransitionSegment <$> o .: "transition"
       _ -> fail $ "Unknown segment type: " ++ show t
+
+-- Custom FromJSON instance for VideoSegment to provide defaults for missing fields
+instance FromJSON VideoSegment where
+  parseJSON = withObject "VideoSegment" $ \o -> do
+    VideoSegment
+      <$> o .: "segmentId"
+      <*> o .: "segmentType"
+      <*> o .: "segmentStart"
+      <*> o .: "segmentEnd"
+      <*> o .:? "textOverlays" .!= []  -- Default to empty list if missing
+      <*> o .:? "audioTracks" .!= []   -- Default to empty list if missing
+      <*> o .:? "transition"           -- Already optional (Maybe type)
 

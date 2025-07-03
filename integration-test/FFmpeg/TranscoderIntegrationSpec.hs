@@ -3,7 +3,7 @@
 module FFmpeg.TranscoderIntegrationSpec (spec) where
 
 import Test.Hspec
-import Control.Monad.Reader (runReaderT)
+import Control.Monad.Reader (runReaderT, MonadReader)
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
 import Data.Time (getCurrentTime)
@@ -20,8 +20,9 @@ import FFmpeg.Config
 import FFmpeg.Transcoder ()
 import File (File(..), Path(..), Segment(..))
 import FileSystem (MonadFileShow(..))
-import Absolute.Common (AbsoluteFS(..), runAbsoluteFS)
-import Absolute.Instances ()  -- for MonadFileShow instance
+import Relative.Common (RelativeFS(..), runRelativeFS)
+import Relative.Instances ()  -- for MonadFileShow instance
+import TestInstances () -- For MonadReader FFmpegConfig RelativeFS instance
 import Data.String (fromString)
 
 -- Helper function to show TranscodeError without Show instance
@@ -226,7 +227,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
       case result of
         TranscodeSuccess command -> do
           commandBinary command `shouldBe` "/usr/bin/ffmpeg"
-          outputPath <- runAbsoluteFS $ showFile (commandOutputPath command)
+          outputPath <- runRelativeFS "." $ showFile (commandOutputPath command)
           T.unpack outputPath `shouldContain` "empty-output.mp4"
           -- Should have basic scaling filter for empty layout
           commandArgs command `shouldContain` ["-filter_complex"]
@@ -326,6 +327,110 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
                 else putStrLn $ "ffprobe failed: " ++ probeStderr
               )
           -- Expected duration: 6.0 seconds (two 3-second segments)
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
+
+    it "handles mixed media layout with video and photo segments" $ do
+      now <- getCurrentTime
+      let layout = VideoLayout
+            { layoutId = "mixed-media-test"
+            , totalDuration = Duration 5.0
+            , segments = [ VideoSegment
+                { segmentId = "video-segment"
+                , segmentType = VideoClip $ MediaReference
+                    { mediaId = "test-video-1.mp4"
+                    , startTime = Duration 0.0
+                    , endTime = Duration 3.0
+                    , playbackSpeed = Just 1.0
+                    }
+                , segmentStart = Duration 0.0
+                , segmentEnd = Duration 3.0
+                , textOverlays = []
+                , audioTracks = []
+                , transition = Nothing
+                }
+                , VideoSegment
+                { segmentId = "photo-segment"
+                , segmentType = PhotoClip 
+                    (MediaReference "test-photo-1.jpg" (Duration 0.0) (Duration 1.0) Nothing)
+                    (Duration 2.0)
+                , segmentStart = Duration 3.0
+                , segmentEnd = Duration 5.0
+                , textOverlays = []
+                , audioTracks = []
+                , transition = Nothing
+                }
+                ]
+            , globalAudio = []
+            , outputFormat = "mp4"
+            , outputResolution = Resolution 1920 1080
+            , outputFrameRate = 30.0
+            , layoutCreatedAt = Timestamp now
+            }
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "mixed-media.mp4" })) Nothing
+      
+      case result of
+        TranscodeSuccess command -> do
+          let args = commandArgs command
+          -- Should have input files for each segment
+          length (filter (== "-i") args) `shouldBe` 2
+          -- Should have filter complex for concatenation with audio
+          args `shouldContain` ["-filter_complex"]
+          -- Should have audio codec enabled
+          args `shouldContain` ["-c:a", "aac"]
+          
+          -- Execute the actual FFmpeg command and validate
+          let outputFile = "mixed-media.mp4"
+          bracket
+            (return ())
+            (\_ -> do
+              exists <- doesFileExist outputFile
+              if exists then removeFile outputFile else return ()
+              )
+            (\_ -> do
+              (exitCode, stdout, stderr) <- readProcessWithExitCode 
+                (commandBinary command) 
+                (commandArgs command)
+                ""
+              
+              -- Debug output on failure
+              if exitCode /= ExitSuccess then do
+                putStrLn $ "FFmpeg failed with exit code: " ++ show exitCode
+                putStrLn $ "FFmpeg stderr: " ++ stderr
+                putStrLn $ "FFmpeg stdout: " ++ stdout
+              else return ()
+              
+              -- Command should complete successfully
+              exitCode `shouldBe` ExitSuccess
+              
+              -- Output file should be created
+              outputExists <- doesFileExist outputFile
+              outputExists `shouldBe` True
+              
+              -- Check video duration using ffprobe
+              (probeExitCode, probeDuration, probeStderr) <- readProcessWithExitCode 
+                "ffprobe" 
+                ["-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", outputFile] 
+                ""
+              
+              if probeExitCode == ExitSuccess 
+                then do
+                  let actualDuration = read probeDuration :: Double
+                  -- Allow tolerance for mixed media encoding precision (±0.2 seconds)
+                  abs (actualDuration - 5.0) `shouldSatisfy` (<= 0.2)
+                else putStrLn $ "ffprobe failed: " ++ probeStderr
+              
+              -- Verify audio is present (even if silent for photo portion)
+              (audioExitCode, audioOutput, audioStderr) <- readProcessWithExitCode 
+                "ffprobe" 
+                ["-v", "quiet", "-select_streams", "a:0", "-show_entries", "stream=codec_name", "-of", "csv=s=,:p=0", outputFile] 
+                ""
+              
+              if audioExitCode == ExitSuccess 
+                then do
+                  audioOutput `shouldContain` "aac"
+                else putStrLn $ "ffprobe audio check failed: " ++ audioStderr
+              )
+          -- Expected duration: 5.0 seconds (3-second video + 2-second photo with audio preserved from video)
         TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
     it "handles multi-segment layout with different video resolutions" $ do
@@ -565,11 +670,10 @@ defaultFFmpegConfig = FFmpegConfig
 createTranscodeRequest :: VideoLayout -> OutputFile -> Maybe FFmpegConfig -> IO TranscodeResult
 createTranscodeRequest layout outputFile maybeConfig = do
   currentDir <- getCurrentDirectory
-  let currentDirSegments = map fromString $ filter (not . null) $ map (filter (/= '/')) $ splitPath currentDir
-      videoPath = Path $ currentDirSegments ++ [fromString "integration-test", fromString "resources", fromString "videos"]
-      photoPath = Path $ currentDirSegments ++ [fromString "integration-test", fromString "resources", fromString "photos"]
-      audioPath = Path $ currentDirSegments ++ [fromString "integration-test", fromString "resources", fromString "audio"]
+  let videoPath = Path [fromString "integration-test", fromString "resources", fromString "videos"]
+      photoPath = Path [fromString "integration-test", fromString "resources", fromString "photos"]
+      audioPath = Path [fromString "integration-test", fromString "resources", fromString "audio"]
       sources = MediaSources videoPath photoPath audioPath
       request = TranscodeRequest layout sources outputFile
       config = maybe defaultFFmpegConfig id maybeConfig
-  runReaderT (transcode request) config
+  runRelativeFS currentDir $ runReaderT (transcode request) config
