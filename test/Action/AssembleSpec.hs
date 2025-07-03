@@ -13,6 +13,8 @@ import Types.Common (Duration(..), Timestamp(..), Resolution(..))
 import Types.Media (VideoRequest(..), MediaFile(..), VideoFile(..), MediaMetadata(..))
 import Types.Video (VideoLayout(..))
 import Action.Assemble
+import File (File(..), Path(..), Segment(..))
+import Data.String (fromString)
 
 -- Mock LLMApi for testing
 data MockLLM = MockLLM { mockResponse :: Assembly.AssemblyResult }
@@ -27,8 +29,7 @@ sampleTimestamp = Timestamp $ parseTimeOrError False defaultTimeLocale "%Y-%m-%d
 sampleVideoFile :: VideoFile
 sampleVideoFile = VideoFile
   { videoMetadata = MediaMetadata
-      { fileName = "test.mp4"
-      , filePath = "/test/test.mp4"
+      { file = File.File { filePath = Path [fromString "test"], fileName = "test.mp4" }
       , fileSize = 1000000
       , createdAt = sampleTimestamp
       , location = Nothing

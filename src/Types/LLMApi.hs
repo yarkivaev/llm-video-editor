@@ -33,7 +33,8 @@ import Types.Video (VideoLayout(..), VideoSegment, AudioTrack)
 import Types.Common (Duration(..), Resolution, Timestamp(..))
 import qualified Types.Assembly as Assembly
 import Types.Assembly (AssemblyContext(..))
-import Types.Media (VideoRequest(..), MediaFile(..), VideoFile(..), PhotoFile(..), MediaMetadata(..), VideoContentAnalysis(..), fileName)
+import Types.Media (VideoRequest(..), MediaFile(..), VideoFile(..), PhotoFile(..), MediaMetadata(..), VideoContentAnalysis(..))
+import File (fileName)
 
 newtype Prompt = Prompt Text
   deriving (Show, Eq, Generic, FromJSON, ToJSON) 
@@ -253,14 +254,14 @@ formatMediaFiles :: [MediaFile] -> Text
 formatMediaFiles files = T.unlines $ map formatMediaFile files
   where
     formatMediaFile (Video vf) = T.concat
-      [ "- Video: ", fileName (videoMetadata vf)
+      [ "- Video: ", fileName (file (videoMetadata vf))
       , " (", T.pack $ show (videoDuration vf), "s)"
       , case contentAnalysis vf of
           Just analysis -> " - " <> contentOverview analysis
           Nothing -> ""
       ]
     formatMediaFile (Photo pf) = T.concat
-      [ "- Photo: ", fileName (photoMetadata pf)
+      [ "- Photo: ", fileName (file (photoMetadata pf))
       , " (", T.pack $ show (photoResolution pf), ")"
       ]
 
@@ -269,10 +270,10 @@ formatMediaFileReferences :: [MediaFile] -> Text
 formatMediaFileReferences files = T.unlines $ map formatMediaReference files
   where
     formatMediaReference (Video vf) = T.concat
-      [ "- Use mediaId: \"", fileName (videoMetadata vf), "\" for video clips"
+      [ "- Use mediaId: \"", fileName (file (videoMetadata vf)), "\" for video clips"
       ]
     formatMediaReference (Photo pf) = T.concat
-      [ "- Use mediaId: \"", fileName (photoMetadata pf), "\" for photo clips"
+      [ "- Use mediaId: \"", fileName (file (photoMetadata pf)), "\" for photo clips"
       ]
 
 -- | Format assembly constraints for prompt

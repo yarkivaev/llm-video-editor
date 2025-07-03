@@ -6,10 +6,11 @@ module FFmpeg.Config
   ) where
 
 import GHC.Generics (Generic)
+import System.FilePath (FilePath)
 
 data FFmpegConfig = FFmpegConfig
-  { ffmpegBinary    :: FilePath    -- ^ Path to ffmpeg binary
-  , ffprobeBinary   :: FilePath    -- ^ Path to ffprobe binary  
+  { ffmpegBinary    :: FilePath    -- ^ Path to ffmpeg binary 
+  , ffprobeBinary   :: FilePath    -- ^ Path to ffprobe binary
   , tempDir         :: FilePath    -- ^ Directory for temporary files
   , maxConcurrency  :: Int         -- ^ Maximum concurrent processes
   , timeoutSeconds  :: Int         -- ^ Process timeout in seconds

@@ -36,7 +36,7 @@ data VideoEditorError
 -- | Input to the video editor system
 data VideoEditorInput = VideoEditorInput
   { inputRequest :: VideoRequest
-  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  } deriving (Eq, Generic, FromJSON, ToJSON)
 
 -- | Output from the video editor system
 data VideoEditorOutput = VideoEditorOutput

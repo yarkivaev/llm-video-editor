@@ -26,6 +26,7 @@ dependencies:
 - directory
 - process
 - filepath
+- abstract-files
 
 ghc-options:
 - -Wall

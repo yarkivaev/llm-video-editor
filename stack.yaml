@@ -3,3 +3,7 @@ resolver:
 
 packages:
 - .
+
+extra-deps:
+- git: https://github.com/yarkivaev/abstract-files.git
+  commit: 1804c3e6e3e2900b70d2c4414ad54eb4058abd83

@@ -18,6 +18,7 @@ import Types.Render
 import Types.Transcoder
 import FFmpeg.Config (FFmpegConfig(..))
 import FFmpeg.Transcoder ()
+import File
 
 instance (Monad m, MonadIO m, MonadReader FFmpegConfig m) => VideoRenderer m where
   renderVideo layout context = do
@@ -38,9 +39,10 @@ instance (Monad m, MonadIO m, MonadReader FFmpegConfig m) => VideoRenderer m whe
       TranscodeFailure transcodeError -> return $ RenderFailure (convertTranscodeError transcodeError)
 
 -- | Execute a transcode command
-executeTranscodeCommand :: TranscodeCommand -> IO (Either RenderError FilePath)
+executeTranscodeCommand :: TranscodeCommand -> IO (Either RenderError File)
 executeTranscodeCommand cmd = do
-  result <- try $ readProcessWithExitCode (commandBinary cmd) (commandArgs cmd) ""
+  let binaryPath = show (commandBinary cmd)
+  result <- try $ readProcessWithExitCode binaryPath (commandArgs cmd) ""
   case result of
     Left (ex :: SomeException) -> 
       return $ Left $ RenderProcessError $ T.pack $ show ex

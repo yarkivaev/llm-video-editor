@@ -16,6 +16,8 @@ import Types.Common (Duration(..), Timestamp(..), Resolution(..), Location(..))
 import Types.Media (VideoRequest(..), MediaFile(..), VideoFile(..), MediaMetadata(..), VideoContentAnalysis(..))
 import Types.Video (VideoLayout(..), VideoSegment(..))
 import qualified Types.Assembly as Assembly
+import File (File(..), Path(..), Segment(..))
+import Data.String (fromString)
 
 -- | Create minimal test data
 mkTestData :: IO (VideoRequest, AssemblyContext)
@@ -23,8 +25,14 @@ mkTestData = do
   now <- getCurrentTime
   let ts = Timestamp now
       video = VideoFile 
-        { videoMetadata = MediaMetadata "test.mp4" "/test/test.mp4" 1000000 ts 
-            (Just $ Location 0.0 0.0 (Just "Test")) (Just "Test video") ["test"]
+        { videoMetadata = MediaMetadata 
+            { file = File.File { filePath = Path [fromString "test"], fileName = "test.mp4" }
+            , fileSize = 1000000
+            , createdAt = ts
+            , location = Just $ Location 0.0 0.0 (Just "Test")
+            , description = Just "Test video"
+            , tags = ["test"]
+            }
         , videoDuration = Duration 30.0, resolution = Resolution 1920 1080
         , frameRate = 30.0, hasAudio = True, videoFormat = "mp4"
         , contentAnalysis = Just $ VideoContentAnalysis "Test content" "Test action" [] [] [] (Just "calm")

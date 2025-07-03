@@ -5,7 +5,7 @@
 module Types.Render
   ( MediaSources (..)
   , singleMediaSources
-  , OutputPath (..)
+  , OutputFile (..)
   , RenderContext (..)
   , RenderError (..)
   , RenderResult (..)
@@ -16,43 +16,43 @@ import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Types.Video (VideoLayout)
+import File (File, Path)
 
 -- | Paths to media source directories
 data MediaSources = MediaSources
-  { videoSourceDir :: FilePath  -- ^ Directory containing video files
-  , photoSourceDir :: FilePath  -- ^ Directory containing photo files
-  , audioSourceDir :: FilePath  -- ^ Directory containing audio files
-  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  { videoSourceDir :: Path  -- ^ Directory containing video files
+  , photoSourceDir :: Path  -- ^ Directory containing photo files
+  , audioSourceDir :: Path  -- ^ Directory containing audio files
+  } deriving (Eq, Generic, FromJSON, ToJSON)
 
-singleMediaSources :: FilePath -> MediaSources
+singleMediaSources :: Path -> MediaSources
 singleMediaSources sourceDir = MediaSources sourceDir sourceDir sourceDir
 
 -- | Output file path
-newtype OutputPath = OutputPath FilePath
-  deriving (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via String
+newtype OutputFile = OutputFile File
+  deriving (Eq, Generic, FromJSON, ToJSON)
 
 -- | Context for video rendering
 data RenderContext = RenderContext
   { mediaSources   :: MediaSources
-  , outputPath     :: OutputPath
-  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  , outputPath     :: OutputFile
+  } deriving (Eq, Generic, FromJSON, ToJSON)
 
 -- | Errors that can occur during rendering
 data RenderError
-  = RenderFileNotFound FilePath
+  = RenderFileNotFound File
   | RenderInvalidInput Text
   | RenderProcessError Text
   | RenderOutputError Text
   | RenderTimeoutError
-  | RenderPermissionError FilePath
-  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  | RenderPermissionError File
+  deriving (Eq, Generic, FromJSON, ToJSON)
 
 -- | Result of video rendering
 data RenderResult
-  = RenderSuccess FilePath      -- ^ Path to created video file
+  = RenderSuccess File      -- ^ Path to created video file
   | RenderFailure RenderError   -- ^ Error during rendering
-  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  deriving (Eq, Generic, FromJSON, ToJSON)
 
 -- | Typeclass for video rendering implementations
 class Monad m => VideoRenderer m where

@@ -7,8 +7,10 @@ import Control.Monad.Reader (runReaderT)
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
 import Data.Time (getCurrentTime)
-import System.Directory (doesFileExist, removeFile)
+import System.Directory (doesFileExist, removeFile, getCurrentDirectory)
+import System.FilePath (splitPath)
 import Control.Exception (bracket)
+import qualified Data.Text as T
 
 import Types.Transcoder
 import Types.Video
@@ -16,6 +18,19 @@ import Types.Render
 import Types.Common
 import FFmpeg.Config
 import FFmpeg.Transcoder ()
+import File (File(..), Path(..), Segment(..))
+import FileSystem (MonadFileShow(..))
+import Absolute.Common (AbsoluteFS(..), runAbsoluteFS)
+import Absolute.Instances ()  -- for MonadFileShow instance
+import Data.String (fromString)
+
+-- Helper function to show TranscodeError without Show instance
+showTranscodeError :: TranscodeError -> String
+showTranscodeError (TranscodeInputError msg) = "TranscodeInputError: " ++ T.unpack msg
+showTranscodeError (TranscodeProcessError msg) = "TranscodeProcessError: " ++ T.unpack msg  
+showTranscodeError (TranscodeOutputError msg) = "TranscodeOutputError: " ++ T.unpack msg
+showTranscodeError (TranscodeFileNotFound _) = "TranscodeFileNotFound: <file>"
+showTranscodeError TranscodeTimeout = "TranscodeTimeout"
 
 spec :: Spec
 spec = describe "FFmpeg Transcoder Integration Tests" $ do
@@ -46,7 +61,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , outputFrameRate = 30.0
             , layoutCreatedAt = Timestamp now
             }
-      result <- createTranscodeRequest layout "./test-output.mp4" Nothing
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "test-output.mp4" })) Nothing
       
       case result of
         TranscodeSuccess command -> do
@@ -57,7 +72,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
           
           -- Note: This test only validates FFmpeg help, not actual video processing
           -- Expected duration would be 5.0 seconds if this command were executed
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
     it "executes FFmpeg command with real test files" $ do
       now <- getCurrentTime
@@ -84,8 +99,8 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , outputFrameRate = 30.0
             , layoutCreatedAt = Timestamp now
             }
-      let outputFile = "./integration-test/test-output.mp4"
-      result <- createTranscodeRequest layout outputFile Nothing
+      let outputFile = "test-output.mp4"
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = fromString outputFile })) Nothing
       
       case result of
         TranscodeSuccess command -> do
@@ -97,7 +112,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
               if exists then removeFile outputFile else return ()
               )
             (\_ -> do
-              (exitCode, stdout, stderr) <- readProcessWithExitCode 
+              (exitCode, _, _) <- readProcessWithExitCode 
                 (commandBinary command) 
                 (commandArgs command) 
                 ""
@@ -122,7 +137,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
                   abs (actualDuration - 3.0) `shouldSatisfy` (<= 0.1)
                 else putStrLn $ "ffprobe failed: " ++ probeStderr
               )
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
     it "validates photo-to-video command with real files" $ do
       now <- getCurrentTime
@@ -146,8 +161,8 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , outputFrameRate = 30.0
             , layoutCreatedAt = Timestamp now
             }
-      let outputFile = "./integration-test/photo-test-output.mp4"
-      result <- createTranscodeRequest layout outputFile Nothing
+      let outputFile = "photo-test-output.mp4"
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = fromString outputFile })) Nothing
       
       case result of
         TranscodeSuccess command -> do
@@ -159,7 +174,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
               if exists then removeFile outputFile else return ()
               )
             (\_ -> do
-              (exitCode, stdout, stderr) <- readProcessWithExitCode 
+              (exitCode, _, stderr) <- readProcessWithExitCode 
                 (commandBinary command) 
                 (commandArgs command) 
                 ""
@@ -191,7 +206,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
                 else putStrLn "Output file was not created"
               else return ()
               )
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
   describe "different video layout scenarios" $ do
     it "handles empty segments layout" $ do
@@ -206,16 +221,17 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , outputFrameRate = 30.0
             , layoutCreatedAt = Timestamp now
             }
-      result <- createTranscodeRequest layout "./empty-output.mp4" Nothing
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "empty-output.mp4" })) Nothing
       
       case result of
         TranscodeSuccess command -> do
-          commandBinary command `shouldBe` "ffmpeg"
-          commandOutputPath command `shouldBe` "./empty-output.mp4"
+          commandBinary command `shouldBe` "/usr/bin/ffmpeg"
+          outputPath <- runAbsoluteFS $ showFile (commandOutputPath command)
+          T.unpack outputPath `shouldContain` "empty-output.mp4"
           -- Should have basic scaling filter for empty layout
           commandArgs command `shouldContain` ["-filter_complex"]
           -- Expected duration: 1.0 seconds (empty layout with totalDuration = 1.0)
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
     it "handles video layout with multiple segments" $ do
       now <- getCurrentTime
@@ -257,7 +273,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , outputFrameRate = 30.0
             , layoutCreatedAt = Timestamp now
             }
-      result <- createTranscodeRequest layout "./multi-segment.mp4" Nothing
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "multi-segment.mp4" })) Nothing
       
       case result of
         TranscodeSuccess command -> do
@@ -268,7 +284,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
           args `shouldContain` ["-filter_complex"]
           
           -- Execute the actual FFmpeg command and validate duration
-          let outputFile = "./multi-segment.mp4"
+          let outputFile = "multi-segment.mp4"
           bracket
             (return ())
             (\_ -> do
@@ -310,7 +326,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
                 else putStrLn $ "ffprobe failed: " ++ probeStderr
               )
           -- Expected duration: 6.0 seconds (two 3-second segments)
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
     it "handles multi-segment layout with different video resolutions" $ do
       now <- getCurrentTime
@@ -352,7 +368,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , outputFrameRate = 30.0
             , layoutCreatedAt = Timestamp now
             }
-      result <- createTranscodeRequest layout "./multi-resolution.mp4" Nothing
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "multi-resolution.mp4" })) Nothing
       
       case result of
         TranscodeSuccess command -> do
@@ -363,7 +379,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
           args `shouldContain` ["-filter_complex"]
           
           -- Execute the actual FFmpeg command and validate duration
-          let outputFile = "./multi-resolution.mp4"
+          let outputFile = "multi-resolution.mp4"
           bracket
             (return ())
             (\_ -> do
@@ -415,7 +431,7 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
                 else putStrLn $ "ffprobe resolution check failed: " ++ resStderr
               )
           -- Expected duration: 5.0 seconds (two 2.5-second segments from different resolutions)
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
 
   describe "configuration variations" $ do
     it "respects verbose logging setting" $ do
@@ -446,8 +462,8 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
       let verboseConfig = defaultFFmpegConfig { verboseLogging = True }
           quietConfig = defaultFFmpegConfig { verboseLogging = False }
       
-      verboseResult <- createTranscodeRequest layout "./verbose-output.mp4" (Just verboseConfig)
-      quietResult <- createTranscodeRequest layout "./verbose-output.mp4" (Just quietConfig)
+      verboseResult <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "verbose-output.mp4" })) (Just verboseConfig)
+      quietResult <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "verbose-output.mp4" })) (Just quietConfig)
       
       case (verboseResult, quietResult) of
         (TranscodeSuccess verboseCmd, TranscodeSuccess quietCmd) -> do
@@ -482,30 +498,78 @@ spec = describe "FFmpeg Transcoder Integration Tests" $ do
             , layoutCreatedAt = Timestamp now
             }
       let customConfig = defaultFFmpegConfig { ffmpegBinary = "/usr/local/bin/ffmpeg" }
-      result <- createTranscodeRequest layout "./custom-output.mp4" (Just customConfig)
+      result <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "custom-output.mp4" })) (Just customConfig)
       
       case result of
         TranscodeSuccess command -> do
           commandBinary command `shouldBe` "/usr/local/bin/ffmpeg"
           -- Expected duration: 2.5 seconds (single video segment)
-        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ show err
+        TranscodeFailure err -> expectationFailure $ "Expected success but got: " ++ showTranscodeError err
+
+    it "handles different absolute binary path configurations" $ do
+      now <- getCurrentTime
+      let layout = VideoLayout
+            { layoutId = "absolute-binary-test"
+            , totalDuration = Duration 2.0
+            , segments = [VideoSegment
+                { segmentId = "absolute-test-segment"  
+                , segmentType = VideoClip $ MediaReference
+                    { mediaId = "test-video-1.mp4"
+                    , startTime = Duration 0.0
+                    , endTime = Duration 2.0
+                    , playbackSpeed = Just 1.0
+                    }
+                , segmentStart = Duration 0.0
+                , segmentEnd = Duration 2.0
+                , textOverlays = []
+                , audioTracks = []
+                , transition = Nothing
+                }]
+            , globalAudio = []
+            , outputFormat = "mp4"
+            , outputResolution = Resolution 1920 1080
+            , outputFrameRate = 30.0
+            , layoutCreatedAt = Timestamp now
+            }
+      
+      -- Test various absolute path configurations
+      let usrBinConfig = defaultFFmpegConfig { ffmpegBinary = "/usr/bin/ffmpeg" }
+          usrLocalBinConfig = defaultFFmpegConfig { ffmpegBinary = "/usr/local/bin/ffmpeg" }
+          homeBrewConfig = defaultFFmpegConfig { ffmpegBinary = "/opt/homebrew/bin/ffmpeg" }
+      
+      usrBinResult <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "usrbin-output.mp4" })) (Just usrBinConfig)
+      usrLocalBinResult <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "usrlocalbin-output.mp4" })) (Just usrLocalBinConfig)  
+      homeBrewResult <- createTranscodeRequest layout (OutputFile (File.File { filePath = Path [], fileName = "homebrew-output.mp4" })) (Just homeBrewConfig)
+      
+      case (usrBinResult, usrLocalBinResult, homeBrewResult) of
+        (TranscodeSuccess usrCmd, TranscodeSuccess localCmd, TranscodeSuccess brewCmd) -> do
+          commandBinary usrCmd `shouldBe` "/usr/bin/ffmpeg"
+          commandBinary localCmd `shouldBe` "/usr/local/bin/ffmpeg"
+          commandBinary brewCmd `shouldBe` "/opt/homebrew/bin/ffmpeg"
+          -- Expected duration: 2.0 seconds (single video segment)
+        _ -> expectationFailure "All absolute path binary configurations should succeed"
 
 
 -- Default FFmpeg configuration for testing
 defaultFFmpegConfig :: FFmpegConfig
 defaultFFmpegConfig = FFmpegConfig
-  { ffmpegBinary = "ffmpeg"
-  , ffprobeBinary = "ffprobe"
-  , tempDir = "/tmp/ffmpeg-test"
+  { ffmpegBinary = "/usr/bin/ffmpeg"
+  , ffprobeBinary = "/usr/bin/ffprobe"
+  , tempDir = "tmp"
   , maxConcurrency = 2
   , timeoutSeconds = 60
   , verboseLogging = False
   }
 
 -- Helper function to create and execute transcoding request
-createTranscodeRequest :: VideoLayout -> FilePath -> Maybe FFmpegConfig -> IO TranscodeResult
+createTranscodeRequest :: VideoLayout -> OutputFile -> Maybe FFmpegConfig -> IO TranscodeResult
 createTranscodeRequest layout outputFile maybeConfig = do
-  let sources = MediaSources "./integration-test/resources/videos" "./integration-test/resources/photos" "./integration-test/resources/audio"
-      request = TranscodeRequest layout sources (OutputPath outputFile)
+  currentDir <- getCurrentDirectory
+  let currentDirSegments = map fromString $ filter (not . null) $ map (filter (/= '/')) $ splitPath currentDir
+      videoPath = Path $ currentDirSegments ++ [fromString "integration-test", fromString "resources", fromString "videos"]
+      photoPath = Path $ currentDirSegments ++ [fromString "integration-test", fromString "resources", fromString "photos"]
+      audioPath = Path $ currentDirSegments ++ [fromString "integration-test", fromString "resources", fromString "audio"]
+      sources = MediaSources videoPath photoPath audioPath
+      request = TranscodeRequest layout sources outputFile
       config = maybe defaultFFmpegConfig id maybeConfig
   runReaderT (transcode request) config
