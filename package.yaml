@@ -52,10 +52,12 @@ library:
     - Types.Transcoder
     - Types.LLMApi
     - Types.LLM
+    - Types.VideoAnalysis
     - Action.Assemble
     - FFmpeg.Config
     - FFmpeg.Render
     - FFmpeg.Transcoder
+    - SemanticVideoAnalysis.Adapter
 
 tests:
   llm-video-editor-types-test:

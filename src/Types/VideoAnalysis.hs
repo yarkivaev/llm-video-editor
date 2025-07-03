@@ -1,5 +1,5 @@
 module Types.VideoAnalysis 
-    ( VideoAnalysis
+    ( VideoAnalysis(..)
     ) where
 
 import Types.Media (VideoContentAnalysis)

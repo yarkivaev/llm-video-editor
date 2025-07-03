@@ -34,12 +34,13 @@ library
       Types.Transcoder
       Types.LLMApi
       Types.LLM
+      Types.VideoAnalysis
       Action.Assemble
       FFmpeg.Config
       FFmpeg.Render
       FFmpeg.Transcoder
+      SemanticVideoAnalysis.Adapter
   other-modules:
-      Types.VideoAnalysis
       Paths_llm_video_editor_types
   autogen-modules:
       Paths_llm_video_editor_types
@@ -68,6 +69,7 @@ test-suite llm-video-editor-types-integration-test
   main-is: Spec.hs
   other-modules:
       FFmpeg.TranscoderIntegrationSpec
+      SemanticVideoAnalysis.SemanticVideoAnalysisIntegrationSpec
       Types.LLMIntegrationSpec
       Paths_llm_video_editor_types
   autogen-modules:
