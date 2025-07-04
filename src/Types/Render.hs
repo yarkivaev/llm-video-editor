@@ -14,6 +14,7 @@ module Types.Render
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Types.Video (VideoLayout)
 import File (File, Path)
@@ -47,6 +48,14 @@ data RenderError
   | RenderTimeoutError
   | RenderPermissionError File
   deriving (Eq, Generic, FromJSON, ToJSON)
+
+instance Show RenderError where
+  show (RenderFileNotFound _) = "RenderFileNotFound"
+  show (RenderInvalidInput t) = "RenderInvalidInput: " ++ T.unpack t
+  show (RenderProcessError t) = "RenderProcessError: " ++ T.unpack t
+  show (RenderOutputError t) = "RenderOutputError: " ++ T.unpack t
+  show RenderTimeoutError = "RenderTimeoutError"
+  show (RenderPermissionError _) = "RenderPermissionError"
 
 -- | Result of video rendering
 data RenderResult

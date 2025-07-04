@@ -42,7 +42,7 @@ instance (Monad m, MonadIO m, MonadReader FFmpegConfig m, MonadFileShow m) => Vi
 -- | Execute a transcode command
 executeTranscodeCommand :: TranscodeCommand -> IO (Either RenderError File)
 executeTranscodeCommand cmd = do
-  let binaryPath = show (commandBinary cmd)
+  let binaryPath = commandBinary cmd
   result <- try $ readProcessWithExitCode binaryPath (commandArgs cmd) ""
   case result of
     Left (ex :: SomeException) -> 

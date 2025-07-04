@@ -121,7 +121,7 @@ renderVideoLayout layout renderCtx warningList = do
   renderResult <- renderVideo layout renderCtx
   
   case renderResult of
-    RenderFailure _renderErr -> return $ Left $ ProcessingError "Video rendering failed"
+    RenderFailure renderErr -> return $ Left $ ProcessingError $ T.pack $ "Video rendering failed: " <> show renderErr
     RenderSuccess outputFilePath -> return $ Right $ VideoEditorOutput 
       { outputFile = OutputFile outputFilePath
       , warnings = warningList
