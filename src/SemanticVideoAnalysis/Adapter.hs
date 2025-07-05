@@ -16,11 +16,14 @@ module SemanticVideoAnalysis.Adapter
 import Control.Exception (catch, SomeException)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON, ToJSON, eitherDecode)
+import qualified Data.ByteString.Lazy.Char8 as L8
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
-import System.Process (readProcess)
+import System.Exit (ExitCode(..))
+import System.Process (readProcess, readProcessWithExitCode)
+import qualified System.Directory
 import Types.Media (VideoContentAnalysis(..), TimeBoundDetail(..))
 import Types.VideoAnalysis (VideoAnalysis(..))
 import Types.Common (Duration(..))
@@ -92,12 +95,27 @@ runSemanticVideoAnalysisCLI config options filePath = do
     let cmd = T.unpack $ binaryPath config
         args = buildAnalysisArgs options filePath
     
-    result <- tryReadProcess cmd args ""
-    case result of
-        Left ex -> return $ Left $ "CLI execution failed: " ++ show ex
-        Right output -> parseAnalysisOutput output
+    -- First check if the file exists
+    fileExists <- liftIO $ System.Directory.doesFileExist (T.unpack filePath)
+    if not fileExists
+        then return $ Left $ "Video file not found: " ++ T.unpack filePath
+        else do
+            result <- tryReadProcessWithStderr cmd args ""
+            case result of
+                Left (exitCode, stdout, stderr) -> 
+                    return $ Left $ unlines 
+                        [ "CLI execution failed with exit code: " ++ show exitCode
+                        , "Command: " ++ cmd ++ " " ++ unwords args
+                        , "Stdout: " ++ stdout
+                        , "Stderr: " ++ stderr
+                        ]
+                Right output -> parseAnalysisOutput output
   where
-    tryReadProcess c a i = (Right <$> readProcess c a i) `catch` (\ex -> return $ Left (ex :: SomeException))
+    tryReadProcessWithStderr c a i = do
+        (exitCode, stdout, stderr) <- readProcessWithExitCode c a i
+        case exitCode of
+            ExitSuccess -> return $ Right stdout
+            ExitFailure code -> return $ Left (code, stdout, stderr)
 
 -- | Build command line arguments for analysis
 buildAnalysisArgs :: AnalysisOptions -> Text -> [String]
@@ -107,6 +125,7 @@ buildAnalysisArgs options filePath =
     , "--frames", show $ frames options
     , "--device", deviceToString $ device options
     , "--model", T.unpack $ model options
+    , "--json"  -- Always request JSON output for machine processing
     ] ++ outputDirArgs
   where
     deviceToString CPU = "cpu"
@@ -119,20 +138,49 @@ buildAnalysisArgs options filePath =
 -- | Parse the output from semantic-video-analysis CLI
 parseAnalysisOutput :: String -> IO (Either String VideoContentAnalysis)
 parseAnalysisOutput output = do
-    -- For now, create a simple mock analysis
-    -- In real implementation, this would parse the JSON output from the CLI
-    return $ Right $ VideoContentAnalysis
-        { contentOverview = "Video content analyzed by semantic-video-analysis"
-        , actionIntroduction = "Analysis generated from extracted frames"
-        , timeBoundDetails = 
-            [ TimeBoundDetail 
-                { detailStartTime = Duration 0
-                , detailEndTime = Duration 10
-                , detailDescription = "Frame-based content analysis"
-                , detailConfidence = Just 0.8
-                }
-            ]
-        , detectedObjects = ["object1", "object2"]
-        , detectedScenes = ["indoor", "outdoor"]
-        , estimatedMood = Just "neutral"
+    -- First, try to parse as JSON from the semantic-video-analysis output
+    case eitherDecode (L8.pack output) of
+        Left jsonErr -> 
+            -- If JSON parsing fails, check if output contains actual content
+            if null output || all (`elem` [' ', '\n', '\t']) output
+                then return $ Left "Empty output from semantic-video-analysis"
+                else return $ Left $ "Failed to parse JSON output: " ++ jsonErr ++ "\nOutput was: " ++ take 500 output
+        Right analysisData ->
+            -- Convert from the CLI output format to our internal format
+            return $ Right $ convertAnalysisData analysisData
+  where
+    -- Convert from semantic-video-analysis JSON format to VideoContentAnalysis
+    convertAnalysisData :: AnalysisOutput -> VideoContentAnalysis
+    convertAnalysisData ao = VideoContentAnalysis
+        { contentOverview = overview ao
+        , actionIntroduction = action_introduction ao
+        , timeBoundDetails = map convertTimeBound (time_bound_details ao)
+        , detectedObjects = detected_objects ao
+        , detectedScenes = detected_scenes ao
+        , estimatedMood = estimated_mood ao
         }
+    
+    convertTimeBound :: TimeBoundOutput -> TimeBoundDetail
+    convertTimeBound tbo = TimeBoundDetail
+        { detailStartTime = Duration (start_time tbo)
+        , detailEndTime = Duration (end_time tbo)
+        , detailDescription = description tbo
+        , detailConfidence = confidence tbo
+        }
+
+-- | Output format from semantic-video-analysis CLI
+data AnalysisOutput = AnalysisOutput
+    { overview :: Text
+    , action_introduction :: Text
+    , time_bound_details :: [TimeBoundOutput]
+    , detected_objects :: [Text]
+    , detected_scenes :: [Text]
+    , estimated_mood :: Maybe Text
+    } deriving (Generic, FromJSON)
+
+data TimeBoundOutput = TimeBoundOutput
+    { start_time :: Double
+    , end_time :: Double
+    , description :: Text
+    , confidence :: Maybe Double
+    } deriving (Generic, FromJSON)
