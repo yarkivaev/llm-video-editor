@@ -94,7 +94,7 @@ getInputArgs sources (_, segment) = do
           photoDir = photoSourceDir sources
       dirPath <- showPath photoDir
       let mediaFilePath = T.unpack dirPath </> fileNameStr
-      return $ ["-loop", "1", "-t", show photoDuration, "-i", mediaFilePath]
+      return $ ["-framerate", "30", "-loop", "1", "-t", show photoDuration, "-i", mediaFilePath]
     TitleCard _ duration -> do
       let Duration titleDuration = duration
       return $ ["-f", "lavfi", "-i", "color=black:size=1920x1080:duration=" ++ show titleDuration]
